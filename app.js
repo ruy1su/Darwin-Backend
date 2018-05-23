@@ -100,14 +100,31 @@ app.get('/api_search/:a?/', function (req,res) {
     ///:a?/:b?
     search_key = req.params.a;
 
-    var sql = "SELECT api_data FROM podcast where api_data LIKE '% ? %' LIMIT 10"
+    var sql = `SELECT api_data FROM podcast where api_data LIKE '%${search_key}%' LIMIT 10`
+    console.log(sql)
     connection.query(sql, search_key, function(error, rows, fields){
        if(error){
            console.log('Error in the query');
        }
        else{
            console.log('Successfull query with search_key:', search_key);
-           res.send(rows);
+           var resultJsonList = [];
+            for (i = 1; i < rows.length; i++) { 
+                resultJson = new Object()  // init the new json object for return 
+                var raw = rows[i]['api_data']
+                raw = raw.split("=>").join(":");
+                var jsData = JSON.parse(raw)
+                var parsedData = jsData['results']
+
+                resultJson['image'] = parsedData[0]['artworkUrl600']
+                //resultJson['author'] = parsedData[0]['artistName']
+                resultJson['title'] = parsedData[0]['collectionName']
+                //console.log(raw)
+                //console.log(jsData['results'])
+                resultJsonList.push(resultJson)
+            }
+            //res.send(rows[1]['api_data']);
+	   res.send(resultJsonList);
        }
     });
 });
