@@ -84,14 +84,17 @@ app.get('/api_home_raw/', function (req,res) {
     });
 });
 
-app.get('/api_pc_epsd/', function (req,res) {
-    connection.query("SELECT * FROM podcast LIMIT 10", function(error, rows, fields){
+app.get('/api_pc_epsd/:podcast_name/', function (req,res) {
+    search_key = req.params.podcast_name;
+    var sql = `SELECT episode FROM episode where podcast = "${search_key}"`;
+    console.log(sql);
+    connection.query(sql, function(error, rows, fields){
        if(error){
            console.log('Error in the query');
        }
        else{
            console.log('Successfull query');
-           res.send(rows[0]);
+           res.send(rows);
        }
     });
 });
