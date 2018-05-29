@@ -8,7 +8,8 @@ var connection = mysql.createConnection({
     user     : 'eric',
     password : 'Weng950702',
     port     : '3306',
-    database : 'darwin'
+    database : 'darwin',
+    multipleStatements: true
     });
 
 connection.connect(function(err) {
@@ -25,43 +26,36 @@ var data = {"id":1,"itunes_link":"https://itunes.apple.com/us/podcast/a-e-radio/
 app.get('/', (req, res) => res.send('Hello this is the backend for Darwin! For more info, you can contact https://www.darwin.com'));
 app.get('/test', function(req, res) {
   res.end(JSON.stringify(data))
-8})
+})
 
 app.get('/api_home/', function (req,res) {
-    ///:a?/:b?
-    //key_a = req.params.a;
-    //key_b = req.params.b; 
-    //key_c = req.params.c;
-    //res.send(req.params.a + ' ' + req.params.b + ' ' + req.params.c);
-    connection.query("SELECT api_data FROM podcast LIMIT 20", function(error, rows, fields){
+    connection.query("SELECT api_data FROM podcast limit 10", function(error, rows, fields){
 	   if(error){
 	       console.log('Error in the query');
 	   }
 	   else{
-	       console.log('Successfull query');
-	       var resultJsonList = [];
-	       for (i = 1; i < rows.length; i++) { 
-		   resultJson = new Object()  // init the new json object for return 
-		   var raw = rows[i]['api_data']
-		   raw = raw.split("=>").join(":");
-		   var jsData = JSON.parse(raw)
-		   var parsedData = jsData['results']
+            console.log('Successfull query');
+            var resultJsonList = [];
+            for (i = 1; i < rows.length; i++) { 
+                resultJson = new Object()  // init the new json object for return 
+                var raw = rows[i]['api_data']
+                raw = raw.split("=>").join(":");
+                var jsData = JSON.parse(raw)
+                var parsedData = jsData['results']
 
-		   resultJson['image'] = parsedData[0]['artworkUrl600']
-		   resultJson['author'] = parsedData[0]['artistName']
-		   resultJson['title'] = parsedData[0]['collectionName']
-		   //console.log(raw)
-		   //console.log(jsData['results'])
-		   resultJsonList.push(resultJson)
-
-	       }
-	       res.send(resultJsonList);
+                resultJson['image'] = parsedData[0]['artworkUrl100']
+                resultJson['author'] = parsedData[0]['artistName']
+                resultJson['title'] = parsedData[0]['collectionName']
+                resultJsonList.push(resultJson)
+            }
+            
+	        res.send(resultJsonList);
 	   }
     });
 });
 
 app.get('/api_home_raw/', function (req,res) {
-    connection.query("SELECT api_data FROM podcast", function(error, rows, fields){
+    connection.query("SELECT api_data FROM podcast limit 10", function(error, rows, fields){
        if(error){
            console.log('Error in the query');
        }
@@ -78,7 +72,6 @@ app.get('/api_home_raw/', function (req,res) {
                 resultJsonList.push(parsedData)
             }
             
-            //res.send(rows[1]['api_data']);
             res.send(resultJsonList);
        }
     });
@@ -86,24 +79,24 @@ app.get('/api_home_raw/', function (req,res) {
 
 app.get('/api_pc_epsd/:podcast_name/', function (req,res) {
     search_key = req.params.podcast_name;
-    var sql = `SELECT episode FROM episode where podcast = "${search_key}"`;
-    console.log(sql);
-    connection.query(sql, function(error, rows, fields){
+    connection.query(`SELECT episode FROM episode where podcast = "${search_key}"`, function(error, rows, fields){
        if(error){
            console.log('Error in the query');
        }
        else{
            console.log('Successfull query');
-           res.send(rows);
+           res.send(rows[0]);
        }
     });
 });
 
 app.get('/api_search/:a?/', function (req,res) {
     ///:a?/:b?
+    //key_a = req.params.a;
+    //res.send(req.params.a + ' ' + req.params.b + ' ' + req.params.c);
     search_key = req.params.a;
 
-    var sql = `SELECT api_data FROM podcast where api_data LIKE '%${search_key}%' LIMIT 10`
+    var sql = `SELECT api_data FROM podcast where api_data LIKE '%${search_key}%' `
     console.log(sql)
     connection.query(sql, search_key, function(error, rows, fields){
        if(error){
@@ -119,18 +112,85 @@ app.get('/api_search/:a?/', function (req,res) {
                 var jsData = JSON.parse(raw)
                 var parsedData = jsData['results']
 
-                resultJson['image'] = parsedData[0]['artworkUrl600']
-                //resultJson['author'] = parsedData[0]['artistName']
+                resultJson['image'] = parsedData[0]['artworkUrl100']
+                resultJson['author'] = parsedData[0]['artistName']
                 resultJson['title'] = parsedData[0]['collectionName']
-                //console.log(raw)
-                //console.log(jsData['results'])
                 resultJsonList.push(resultJson)
             }
-            //res.send(rows[1]['api_data']);
-	   res.send(resultJsonList);
+            res.send(resultJsonList);
        }
     });
 });
+
+//home page: TRENDING
+app.get('/api_trending/', function (req,res) {
+    connection.query("SELECT api_data FROM podcast where id = 120033 or id = 116886 or id = 46300 or id = 59181;", function(error, rows, fields){
+       if(error){
+           console.log('Error in the query');
+       }
+       else{
+            console.log('Successfull query');
+            showRes(res, rows);
+       }
+    });
+});
+
+//home page: Your Friends are listen to
+app.get('/api_friends/', function (req,res) {
+    connection.query("SELECT api_data FROM podcast where id = 42576 or id = 128946 or id = 128970 or id = 129557;", function(error, rows, fields){
+       if(error){
+           console.log('Error in the query');
+       }
+       else{
+            console.log('Successfull query');
+            showRes(res, rows);
+       }
+    });
+});
+
+app.get('/api_up_next/', function (req,res) {
+    connection.query("SELECT api_data FROM podcast where id = 123761 or id = 115049 or id = 113522;", function(error, rows, fields){
+       if(error){
+           console.log('Error in the query');
+       }
+       else{
+            console.log('Successfull query');
+            showRes(res, rows);
+       }
+    });
+});
+
+app.get('/api_play_list/', function (req,res) {
+    connection.query("SELECT api_data FROM podcast where id = 140170 or id = 44218 or id = 58604 or id = 129923 or id = 130183 or id = 130239;", function(error, rows, fields){ // or id = 138979
+       if(error){
+           console.log('Error in the query');
+       }
+       else{
+            console.log('Successfull query');
+            showRes(res, rows);
+       }
+    });
+});
+
+function showRes(res, rows) { 
+    var resultJsonList = [];
+    for (i = 0; i < rows.length; i++) { 
+        resultJson = new Object()  // init the new json object for return 
+        var raw = rows[i]['api_data'];
+        // console.log(raw);
+        raw = raw.split("=>").join(":");
+        // console.log(raw);
+        var jsData = JSON.parse(raw);
+        var parsedData = jsData['results'];
+        console.log(parsedData.length);
+
+        resultJson['image'] = parsedData[0]['artworkUrl100']
+        resultJson['author'] = parsedData[0]['artistName']
+        resultJson['title'] = parsedData[0]['collectionName']
+        resultJsonList.push(resultJson)
+    }
+    res.send(resultJsonList);
+}
 
 app.listen(5000, () => console.log('Example app listening on port 5000!'));
 app.on('close', function() {

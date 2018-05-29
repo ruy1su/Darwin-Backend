@@ -85,3 +85,83 @@ Successfull query
 Successfull query
 Successfull query
 Successfull query
+Example app listening on port 5000!
+Connected to database.
+SELECT episode FROM episode where podcast = "A&G's Picture This!"
+Successfull query
+SELECT episode FROM episode where podcast = "A&G's Picture This!"
+Successfull query
+SELECT episode FROM episode where podcast = "A&G's Picture This!"
+Successfull query
+SELECT episode FROM episode where podcast = "A&G's Picture This!"
+Successfull query
+SELECT api_data FROM podcast where api_data LIKE '%sym%' LIMIT 10
+Successfull query with search_key: sym
+SELECT episode FROM episode where podcast = "podcastName"
+Successfull query
+SELECT episode FROM episode where podcast = "podcastName"
+Successfull query
+SELECT episode FROM episode where podcast = "A&G's"
+Successfull query
+SELECT api_data FROM podcast where api_data LIKE '%sym%' LIMIT 10
+Successfull query with search_key: sym
+SELECT episode FROM episode where podcast = "podcastName"
+Successfull query
+SELECT api_data FROM podcast where api_data LIKE '%sym%' LIMIT 10
+Successfull query with search_key: sym
+SELECT api_data FROM podcast where api_data LIKE '%searchKey%' LIMIT 10
+Successfull query with search_key: searchKey
+SELECT episode FROM episode where podcast = "podcastName"
+Successfull query
+SELECT episode FROM episode where podcast = "A&G's"
+Successfull query
+SELECT api_data FROM podcast where api_data LIKE '%sym%' LIMIT 10
+Successfull query with search_key: sym
+events.js:183
+      throw er; // Unhandled 'error' event
+      ^
+
+Error: Connection lost: The server closed the connection.
+    at Protocol.end (/home/ec2-user/darwin/node_modules/mysql/lib/protocol/Protocol.js:113:13)
+    at Socket.<anonymous> (/home/ec2-user/darwin/node_modules/mysql/lib/Connection.js:109:28)
+    at emitNone (events.js:111:20)
+    at Socket.emit (events.js:208:7)
+    at endReadableNT (_stream_readable.js:1064:12)
+    at _combinedTickCallback (internal/process/next_tick.js:138:11)
+    at process._tickCallback (internal/process/next_tick.js:180:9)
+Example app listening on port 5000!
+Connected to database.
+Successfull query
+Successfull query
+Successfull query
+Successfull query
+Successfull query
+events.js:183
+      throw er; // Unhandled 'error' event
+      ^
+
+Error: Connection lost: The server closed the connection.
+    at Protocol.end (/home/ec2-user/darwin/node_modules/mysql/lib/protocol/Protocol.js:113:13)
+    at Socket.<anonymous> (/home/ec2-user/darwin/node_modules/mysql/lib/Connection.js:109:28)
+    at emitNone (events.js:111:20)
+    at Socket.emit (events.js:208:7)
+    at endReadableNT (_stream_readable.js:1064:12)
+    at _combinedTickCallback (internal/process/next_tick.js:138:11)
+    at process._tickCallback (internal/process/next_tick.js:180:9)
+Example app listening on port 5000!
+Connected to database.
+Successfull query
+Successfull query
+Successfull query
+events.js:183
+      throw er; // Unhandled 'error' event
+      ^
+
+Error: Connection lost: The server closed the connection.
+    at Protocol.end (/home/ec2-user/darwin/node_modules/mysql/lib/protocol/Protocol.js:113:13)
+    at Socket.<anonymous> (/home/ec2-user/darwin/node_modules/mysql/lib/Connection.js:109:28)
+    at emitNone (events.js:111:20)
+    at Socket.emit (events.js:208:7)
+    at endReadableNT (_stream_readable.js:1064:12)
+    at _combinedTickCallback (internal/process/next_tick.js:138:11)
+    at process._tickCallback (internal/process/next_tick.js:180:9)
