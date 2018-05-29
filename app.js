@@ -6,7 +6,7 @@ var app = express();
 var connection = mysql.createConnection({
     host     : 'aam2629vgw55ee.czd1gxziytnq.us-east-2.rds.amazonaws.com',
     user     : 'eric',
-    password : 'Weng950702',
+    password : '********',
     port     : '3306',
     database : 'darwin',
     multipleStatements: true
