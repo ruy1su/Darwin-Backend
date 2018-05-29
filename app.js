@@ -6,7 +6,7 @@ var app = express();
 var connection = mysql.createConnection({
     host     : 'aam2629vgw55ee.czd1gxziytnq.us-east-2.rds.amazonaws.com',
     user     : 'eric',
-    password : '********',
+    password : 'Weng950702',
     port     : '3306',
     database : 'darwin',
     multipleStatements: true
@@ -182,7 +182,7 @@ function showRes(res, rows) {
         // console.log(raw);
         var jsData = JSON.parse(raw);
         var parsedData = jsData['results'];
-        console.log(parsedData.length);
+        // console.log(parsedData.length);
 
         resultJson['image'] = parsedData[0]['artworkUrl100']
         resultJson['author'] = parsedData[0]['artistName']
@@ -191,8 +191,7 @@ function showRes(res, rows) {
     }
     res.send(resultJsonList);
 }
-
-app.listen(5000, () => console.log('Example app listening on port 5000!'));
+app.listen(5000, () => console.log('Example app listening on port 3000!'));
 app.on('close', function() {
     connection.end();
 });

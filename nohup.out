@@ -165,3 +165,21 @@ Error: Connection lost: The server closed the connection.
     at endReadableNT (_stream_readable.js:1064:12)
     at _combinedTickCallback (internal/process/next_tick.js:138:11)
     at process._tickCallback (internal/process/next_tick.js:180:9)
+Example app listening on port 5000!
+Connected to database.
+Successfull query
+events.js:183
+      throw er; // Unhandled 'error' event
+      ^
+
+Error: Connection lost: The server closed the connection.
+    at Protocol.end (/home/ec2-user/darwin/node_modules/mysql/lib/protocol/Protocol.js:113:13)
+    at Socket.<anonymous> (/home/ec2-user/darwin/node_modules/mysql/lib/Connection.js:109:28)
+    at emitNone (events.js:111:20)
+    at Socket.emit (events.js:208:7)
+    at endReadableNT (_stream_readable.js:1064:12)
+    at _combinedTickCallback (internal/process/next_tick.js:138:11)
+    at process._tickCallback (internal/process/next_tick.js:180:9)
+Example app listening on port 5000!
+Connected to database.
+Successfull query
