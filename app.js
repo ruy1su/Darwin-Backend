@@ -15,8 +15,8 @@ var connection = mysql.createConnection({
 
 connection.connect(function(err) {
     if (err) {
-	   console.error('Database connection failed: ' + err.stack);
-	   return;
+       console.error('Database connection failed: ' + err.stack);
+       return;
     }
     console.log('Connected to database.');
 });
@@ -31,10 +31,10 @@ app.get('/test', function(req, res) {
 
 app.get('/api_home/', function (req,res) {
     connection.query("SELECT api_data FROM podcast_list limit 10", function(error, rows, fields){
-	   if(error){
-	       console.log('Error in the query');
-	   }
-	   else{
+       if(error){
+           console.log('Error in the query');
+       }
+       else{
             console.log('Successfull query');
             var resultJsonList = [];
             for (i = 1; i < rows.length; i++) { 
@@ -50,8 +50,8 @@ app.get('/api_home/', function (req,res) {
                 resultJsonList.push(resultJson)
             }
             
-	        res.send(resultJsonList);
-	   }
+            res.send(resultJsonList);
+       }
     });
 });
 
@@ -86,7 +86,7 @@ app.get('/api_pc_epsd/:podcast_name/', function (req,res) {
        }
        else{
            console.log('Successfull query');
-	   console.log(rows);
+       console.log(rows);
            res.send(rows);
        }
     });
@@ -111,15 +111,15 @@ app.get('/api_search/:a?/', function (req,res) {
                 resultJson = new Object()  // init the new json object for return 
                 var raw = rows[i]['api_data']
                 raw = raw.split("=>").join(":");
-		console.log(raw);
-		//raw = escapeJSON(raw);
-		try {
-		    var jsData = JSON.parse(raw);
-		} catch(e) {
-		    console.log('malformed request', raw);
-		    console.log(e);
-		    return res.status(400).send('malformed request: ' + raw);
-		}
+        console.log(raw);
+        //raw = escapeJSON(raw);
+        try {
+            var jsData = JSON.parse(raw);
+        } catch(e) {
+            console.log('malformed request', raw);
+            console.log(e);
+            return res.status(400).send('malformed request: ' + raw);
+        }
                 //var jsData = JSON.parse(raw)
                 var parsedData = jsData['results']
 
@@ -191,7 +191,13 @@ function showRes(res, rows) {
         // console.log(raw);
         raw = raw.split("=>").join(":");
         // console.log(raw);
-        var jsData = JSON.parse(raw);
+        try {
+            var jsData = JSON.parse(raw);
+        } catch(e) {
+            console.log('malformed request', raw);
+            console.log(e);
+            return res.status(400).send('malformed request: ' + raw);
+        }        
         var parsedData = jsData['results'];
         // console.log(parsedData.length);
 
@@ -206,4 +212,3 @@ app.listen(5000, () => console.log('Example app listening on port 3000!'));
 app.on('close', function() {
     connection.end();
 });
-
