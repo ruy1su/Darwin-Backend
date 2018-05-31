@@ -110,16 +110,18 @@ app.get('/api_search/:a?/', function (req,res) {
             for (i = 1; i < rows.length; i++) { 
                 resultJson = new Object()  // init the new json object for return 
                 var raw = rows[i]['api_data']
+                // console.log(raw+"-------------\r\n");
                 raw = raw.split("=>").join(":");
-        console.log(raw);
-        //raw = escapeJSON(raw);
-        try {
-            var jsData = JSON.parse(raw);
-        } catch(e) {
-            console.log('malformed request', raw);
-            console.log(e);
-            return res.status(400).send('malformed request: ' + raw);
-        }
+                raw = raw.replace(/(\r\n\t|\n|\r\t)/gm,"");
+                // console.log(raw+"-------------\r\n");
+
+                try {
+                    var jsData = JSON.parse(raw);
+                } catch(e) {
+                    console.log('malformed request', raw);
+                    console.log(e);
+                    // return res.status(400).send('malformed request: ' + raw);
+                }
                 //var jsData = JSON.parse(raw)
                 var parsedData = jsData['results']
 
@@ -196,7 +198,7 @@ function showRes(res, rows) {
         } catch(e) {
             console.log('malformed request', raw);
             console.log(e);
-            return res.status(400).send('malformed request: ' + raw);
+            // return res.status(400).send('malformed request: ' + raw);
         }        
         var parsedData = jsData['results'];
         // console.log(parsedData.length);
@@ -208,6 +210,14 @@ function showRes(res, rows) {
     }
     res.send(resultJsonList);
 }
+
+// Handle 404 - Keep this as a last route
+app.use(function(req, res, next) {
+    res.status(404);
+    res.send('404: File Not Found');
+});
+
+
 app.listen(5000, () => console.log('Example app listening on port 3000!'));
 app.on('close', function() {
     connection.end();
