@@ -1,5 +1,6 @@
 var mysql = require('mysql');
 var express = require('express');
+var escapeJSON = require('escape-json-node');
 var app = express();
 
 
@@ -29,7 +30,7 @@ app.get('/test', function(req, res) {
 })
 
 app.get('/api_home/', function (req,res) {
-    connection.query("SELECT api_data FROM podcast limit 10", function(error, rows, fields){
+    connection.query("SELECT api_data FROM podcast_list limit 10", function(error, rows, fields){
 	   if(error){
 	       console.log('Error in the query');
 	   }
@@ -55,7 +56,7 @@ app.get('/api_home/', function (req,res) {
 });
 
 app.get('/api_home_raw/', function (req,res) {
-    connection.query("SELECT api_data FROM podcast limit 10", function(error, rows, fields){
+    connection.query("SELECT api_data FROM podcast_list limit 10", function(error, rows, fields){
        if(error){
            console.log('Error in the query');
        }
@@ -79,13 +80,14 @@ app.get('/api_home_raw/', function (req,res) {
 
 app.get('/api_pc_epsd/:podcast_name/', function (req,res) {
     search_key = req.params.podcast_name;
-    connection.query(`SELECT episode FROM episode where podcast = "${search_key}"`, function(error, rows, fields){
+    connection.query(`SELECT episode FROM episode where podcast = "${search_key}" limit 5;`, function(error, rows, fields){
        if(error){
            console.log('Error in the query');
        }
        else{
            console.log('Successfull query');
-           res.send(rows[0]);
+	   console.log(rows);
+           res.send(rows);
        }
     });
 });
@@ -96,7 +98,7 @@ app.get('/api_search/:a?/', function (req,res) {
     //res.send(req.params.a + ' ' + req.params.b + ' ' + req.params.c);
     search_key = req.params.a;
 
-    var sql = `SELECT api_data FROM podcast where api_data LIKE '%${search_key}%' `
+    var sql = `SELECT api_data FROM podcast_list where podcast LIKE '%${search_key}%' `
     console.log(sql)
     connection.query(sql, search_key, function(error, rows, fields){
        if(error){
@@ -109,7 +111,16 @@ app.get('/api_search/:a?/', function (req,res) {
                 resultJson = new Object()  // init the new json object for return 
                 var raw = rows[i]['api_data']
                 raw = raw.split("=>").join(":");
-                var jsData = JSON.parse(raw)
+		console.log(raw);
+		//raw = escapeJSON(raw);
+		try {
+		    var jsData = JSON.parse(raw);
+		} catch(e) {
+		    console.log('malformed request', raw);
+		    console.log(e);
+		    return res.status(400).send('malformed request: ' + raw);
+		}
+                //var jsData = JSON.parse(raw)
                 var parsedData = jsData['results']
 
                 resultJson['image'] = parsedData[0]['artworkUrl100']
@@ -124,7 +135,7 @@ app.get('/api_search/:a?/', function (req,res) {
 
 //home page: TRENDING
 app.get('/api_trending/', function (req,res) {
-    connection.query("SELECT api_data FROM podcast where id = 120033 or id = 116886 or id = 46300 or id = 59181;", function(error, rows, fields){
+    connection.query("SELECT api_data FROM podcast_list where id = 120033 or id = 116886 or id = 46300 or id = 59181;", function(error, rows, fields){
        if(error){
            console.log('Error in the query');
        }
@@ -137,7 +148,7 @@ app.get('/api_trending/', function (req,res) {
 
 //home page: Your Friends are listen to
 app.get('/api_friends/', function (req,res) {
-    connection.query("SELECT api_data FROM podcast where id = 42576 or id = 128946 or id = 128970 or id = 129557;", function(error, rows, fields){
+    connection.query("SELECT api_data FROM podcast_list where id = 42576 or id = 128946 or id = 128970 or id = 129557;", function(error, rows, fields){
        if(error){
            console.log('Error in the query');
        }
@@ -149,7 +160,7 @@ app.get('/api_friends/', function (req,res) {
 });
 
 app.get('/api_up_next/', function (req,res) {
-    connection.query("SELECT api_data FROM podcast where id = 123761 or id = 115049 or id = 113522;", function(error, rows, fields){
+    connection.query("SELECT api_data FROM podcast_list where id = 123761 or id = 115049 or id = 113522;", function(error, rows, fields){
        if(error){
            console.log('Error in the query');
        }
@@ -161,7 +172,7 @@ app.get('/api_up_next/', function (req,res) {
 });
 
 app.get('/api_play_list/', function (req,res) {
-    connection.query("SELECT api_data FROM podcast where id = 140170 or id = 44218 or id = 58604 or id = 129923 or id = 130183 or id = 130239;", function(error, rows, fields){ // or id = 138979
+    connection.query("SELECT api_data FROM podcast_list where id = 140170 or id = 44218 or id = 58604 or id = 129923 or id = 130183 or id = 130239;", function(error, rows, fields){ // or id = 138979
        if(error){
            console.log('Error in the query');
        }
