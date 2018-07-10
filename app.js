@@ -7,7 +7,7 @@ var app = express();
 var connection = mysql.createConnection({
     host     : 'aam2629vgw55ee.czd1gxziytnq.us-east-2.rds.amazonaws.com',
     user     : 'eric',
-    password : 'Weng950702',
+    password : '*******',
     port     : '3306',
     database : 'darwin',
     multipleStatements: true
@@ -44,9 +44,13 @@ app.get('/api_home/', function (req,res) {
                 var jsData = JSON.parse(raw)
                 var parsedData = jsData['results']
 
-                resultJson['image'] = parsedData[0]['artworkUrl100']
-                resultJson['author'] = parsedData[0]['artistName']
+                resultJson['coverArtURL'] = parsedData[0]['artworkUrl100']
+                resultJson['artist'] = parsedData[0]['artistName']
                 resultJson['title'] = parsedData[0]['collectionName']
+                resultJson['duration'] = 0
+                resultJson['mediaURL'] = " "
+
+
                 resultJsonList.push(resultJson)
             }
             
@@ -125,9 +129,11 @@ app.get('/api_search/:a?/', function (req,res) {
                 //var jsData = JSON.parse(raw)
                 var parsedData = jsData['results']
 
-                resultJson['image'] = parsedData[0]['artworkUrl100']
-                resultJson['author'] = parsedData[0]['artistName']
+                resultJson['coverArtURL'] = parsedData[0]['artworkUrl100']
+                resultJson['artist'] = parsedData[0]['artistName']
                 resultJson['title'] = parsedData[0]['collectionName']
+                resultJson['duration'] = 0
+                resultJson['mediaURL'] = " "
                 resultJsonList.push(resultJson)
             }
             res.send(resultJsonList);
@@ -203,9 +209,11 @@ function showRes(res, rows) {
         var parsedData = jsData['results'];
         // console.log(parsedData.length);
 
-        resultJson['image'] = parsedData[0]['artworkUrl100']
-        resultJson['author'] = parsedData[0]['artistName']
+        resultJson['coverArtURL'] = parsedData[0]['artworkUrl100']
+        resultJson['artist'] = parsedData[0]['artistName']
         resultJson['title'] = parsedData[0]['collectionName']
+        resultJson['duration'] = 0
+        resultJson['mediaURL'] = " "
         resultJsonList.push(resultJson)
     }
     res.send(resultJsonList);
@@ -214,11 +222,11 @@ function showRes(res, rows) {
 // Handle 404 - Keep this as a last route
 app.use(function(req, res, next) {
     res.status(404);
-    res.send('404: Page Not Found');
+    res.send('404: File Not Found');
 });
 
 
-app.listen(5000, () => console.log('Example app listening on port 3000!'));
+app.listen(5000, () => console.log('Example app listening on port 5000!'));
 app.on('close', function() {
     connection.end();
 });
