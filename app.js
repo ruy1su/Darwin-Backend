@@ -1,13 +1,21 @@
+// Created By Zixia Weng on May 21. 2018
+//
+// Copyright © 2018 Darwin. All rights reserved.
+//
+
 var mysql = require('mysql');
 var express = require('express');
 var escapeJSON = require('escape-json-node');
+var bodyParser = require('body-parser')
 var app = express();
 
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({extended: false}));
 
 var connection = mysql.createConnection({
     host     : 'aam2629vgw55ee.czd1gxziytnq.us-east-2.rds.amazonaws.com',
     user     : 'eric',
-    password : '*******',
+    password : 'Weng950702',
     port     : '3306',
     database : 'darwin',
     multipleStatements: true
@@ -21,16 +29,26 @@ connection.connect(function(err) {
     console.log('Connected to database.');
 });
 
-//For test only
-var data = {"id":1,"itunes_link":"https://itunes.apple.com/us/podcast/a-e-radio/id867773712","podcast":"A&E Radio!!!","image":"https://s.mzstatic.com/htmlResources/8fc4/frameworks/images/p.png","category":"Arts","language":"Language: English","rating":"","reviews":"","url":"https://podcastmachine.com/pod","api_data":"{\"resultCount\"=>1, \"results\"=>[{\"wrapperType\"=>\"track\", \"kind\"=>\"podcast\", \"collectionId\"=>867773712, \"trackId\"=>867773712, \"artistName\"=>\"A&E Radio\", \"collectionName\"=>\"A&E Radio!!!\", \"trackName\"=>\"A&E Radio!!!\", \"collectionCensoredName\"=>\"A&E Radio!!!\", \"trackCensoredName\"=>\"A&E Radio!!!\", \"collectionViewUrl\"=>\"https://itunes.apple.com/us/podcast/a-e-radio/id867773712?mt=2&uo=4\", \"feedUrl\"=>\"https://feed.podcastmachine.com/podcasts/16672/mp3.rss\", \"trackViewUrl\"=>\"https://itunes.apple.com/us/podcast/a-e-r"};
+// POST API ---------------------------------------------------------------------------------------------------------------------------------------
 
-app.get('/', (req, res) => res.send('Hello this is the backend for Darwin! For more info, you can contact https://www.darwin.com'));
-app.get('/test', function(req, res) {
-  res.end(JSON.stringify(data))
-})
+app.post("/create_user", (req, res) => {
+    var fname=req.body.fname;
+    var lname=req.body.lname;
+    var email=req.body.email;
+    console.log(req.body)
+    connection.query(`INSERT INTO user (fname, lname, email) VALUES ("${fname}", "${lname}", "${email}")`, function(err, result){
+        if(err) {return res.send(err);}
+        else{
+            console.log("1 user inserted");
+            res.send("Success");
+        }
+    });
+});
 
+// GET API ---------------------------------------------------------------------------------------------------------------------------------------
+// Home Page Api
 app.get('/api_home/', function (req,res) {
-    connection.query("SELECT api_data FROM podcast_list limit 10", function(error, rows, fields){
+    connection.query("SELECT id, api_data FROM podcast_list limit 15", function(error, rows, fields){
        if(error){
            console.log('Error in the query');
        }
@@ -38,7 +56,8 @@ app.get('/api_home/', function (req,res) {
             console.log('Successfull query');
             var resultJsonList = [];
             for (i = 1; i < rows.length; i++) { 
-                resultJson = new Object()  // init the new json object for return 
+                resultJson = new Object()  
+                var id = rows[i]['id']
                 var raw = rows[i]['api_data']
                 raw = raw.split("=>").join(":");
                 var jsData = JSON.parse(raw)
@@ -47,8 +66,13 @@ app.get('/api_home/', function (req,res) {
                 resultJson['coverArtURL'] = parsedData[0]['artworkUrl100']
                 resultJson['artist'] = parsedData[0]['artistName']
                 resultJson['title'] = parsedData[0]['collectionName']
-                resultJson['duration'] = 0
-                resultJson['mediaURL'] = " "
+                resultJson['pid'] = id
+                if(!parsedData[0]['feedUrl']){
+                    resultJson['mediaURL'] = parsedData[0]['artworkUrl100']
+                }
+                else{
+                    resultJson['mediaURL'] = parsedData[0]['feedUrl']
+                }
 
 
                 resultJsonList.push(resultJson)
@@ -59,6 +83,7 @@ app.get('/api_home/', function (req,res) {
     });
 });
 
+// Home Page Api Raw Data
 app.get('/api_home_raw/', function (req,res) {
     connection.query("SELECT api_data FROM podcast_list limit 10", function(error, rows, fields){
        if(error){
@@ -72,8 +97,6 @@ app.get('/api_home_raw/', function (req,res) {
                 raw = raw.split("=>").join(":");
                 var jsData = JSON.parse(raw)
                 var parsedData = jsData['results']
-                //console.log(raw)
-                //console.log(jsData['results'])
                 resultJsonList.push(parsedData)
             }
             
@@ -82,6 +105,28 @@ app.get('/api_home_raw/', function (req,res) {
     });
 });
 
+// Search Episode with Podcast Id
+app.get('/api_episode/:pid/', function (req,res) {
+    search_key = req.params.pid;
+    connection.query(`SELECT podcast_id as pid, podcast, episode as title, release_date, info FROM episode where podcast_id = "${search_key}";`, function(error, rows, fields){
+        if(error){
+            console.log('Error in the query');
+        }
+        else{
+            console.log('Successfull query');
+            var resultJsonList = [];
+            for (i = 0; i < rows.length; i++) { 
+                rows[i]['eid'] = 0
+                rows[i]['artist'] = " "
+                rows[i]['mediaURL'] = "http://is5.mzstatic.com/image/thumb/Music6/v4/ca/82/2f/ca822f13-f1f7-dd8c-957d-a95a7b43501c/source/100x100bb.jpg"
+            }
+            
+            res.send(rows);
+        }
+    });
+});
+
+// Get Episode Data With Podcast Name
 app.get('/api_pc_epsd/:podcast_name/', function (req,res) {
     search_key = req.params.podcast_name;
     connection.query(`SELECT episode FROM episode where podcast = "${search_key}" limit 5;`, function(error, rows, fields){
@@ -96,10 +141,8 @@ app.get('/api_pc_epsd/:podcast_name/', function (req,res) {
     });
 });
 
+// Search Podcast
 app.get('/api_search/:a?/', function (req,res) {
-    ///:a?/:b?
-    //key_a = req.params.a;
-    //res.send(req.params.a + ' ' + req.params.b + ' ' + req.params.c);
     search_key = req.params.a;
 
     var sql = `SELECT api_data FROM podcast_list where podcast LIKE '%${search_key}%' `
@@ -126,14 +169,13 @@ app.get('/api_search/:a?/', function (req,res) {
                     console.log(e);
                     // return res.status(400).send('malformed request: ' + raw);
                 }
-                //var jsData = JSON.parse(raw)
                 var parsedData = jsData['results']
 
                 resultJson['coverArtURL'] = parsedData[0]['artworkUrl100']
                 resultJson['artist'] = parsedData[0]['artistName']
                 resultJson['title'] = parsedData[0]['collectionName']
                 resultJson['duration'] = 0
-                resultJson['mediaURL'] = " "
+                resultJson['mediaURL'] = parsedData[0]['feedUrl']
                 resultJsonList.push(resultJson)
             }
             res.send(resultJsonList);
@@ -219,6 +261,7 @@ function showRes(res, rows) {
     res.send(resultJsonList);
 }
 
+
 // Handle 404 - Keep this as a last route
 app.use(function(req, res, next) {
     res.status(404);
@@ -226,7 +269,10 @@ app.use(function(req, res, next) {
 });
 
 
-app.listen(5000, () => console.log('Example app listening on port 5000!'));
+// Listen to port other than 80
+app.listen(5000, () => console.log('Example app listening on port 3000!'));
+
+// End Connection
 app.on('close', function() {
     connection.end();
 });
