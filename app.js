@@ -1,7 +1,7 @@
-// Created By Zixia Weng on May 21. 2018
-//
+// Created By Zixia Weng on May 21. 2018 
+
 // Copyright © 2018 Darwin. All rights reserved.
-//
+
 
 var mysql = require('mysql');
 var express = require('express');
@@ -237,7 +237,7 @@ app.get('/api_home/', function (req,res) {
                 resultJson['title'] = parsedData[0]['collectionName']
                 resultJson['pid'] = id
                 if(!parsedData[0]['feedUrl']){
-                    resultJson['mediaURL'] = parsedData[0]['artworkUrl600']
+                    resultJson['mediaURL'] = parsedDatash[0]['artworkUrl600']
                 }
                 else{
                     resultJson['mediaURL'] = parsedData[0]['feedUrl']
