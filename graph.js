@@ -129,7 +129,7 @@ class RecommendationEngine {
 		for (var i = 0; i < users.length; i++) { 
 		    that.graph.createNode('user', users[i]);
 		}
-		console.log(users);
+		// console.log(users);
 	}
 
 	load_links (links){
@@ -140,12 +140,24 @@ class RecommendationEngine {
 			uid = links[i]["uid"]
 			pid = links[i]["pid"]
 			var unode = that.graph.nodes('user').query().filter({uid__is: uid}).units()[0];
-			console.log(unode)
+			// console.log(unode)
 			var pnode = that.graph.nodes('podcast').query().filter({id__is: pid.toString()}).units()[0];
-			console.log(pnode,pid)
+			// console.log(pnode)
 			that.graph.createEdge('collection').link(unode, pnode).setDistance(1);
 		}
+	}
+
+	recommendPodcasts(){
+		var that = this;
 		console.log(that.graph.edges('collection').query().units());
+		console.log("...............")
+		console.log(that.graph.nodes('user').query().first())
+		console.log((that.graph.closest(
+		  that.graph.nodes('user').query().first(), // grab Sharing Economy node
+		  	{
+			  count: 0
+			}
+		)).toString())
 	}
 
 	load_podcasts (podcasts_file_path){
