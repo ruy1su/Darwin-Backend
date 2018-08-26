@@ -59,6 +59,9 @@ connection.query(`Select uid, pid FROM user_collection;`, function(error, rows, 
     });
 // receng.load_links(links)
 
+/**
+ * Task 1
+ */
 function task1 () {
   return new Promise(resolve => {
     setTimeout(() => {
@@ -69,7 +72,7 @@ function task1 () {
 }
 
 /**
- * 第二个任务
+ * Task 2
  */
 function task2 () {
 
@@ -82,7 +85,7 @@ function task2 () {
 }
 
 /**
- * 第三个任务
+ * Task 3
  */
 function task3 () {
   return new Promise((resolve) => {
@@ -93,10 +96,20 @@ function task3 () {
   });
 }
 
+function task4 () {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      receng.recommendPodcasts()
+      resolve('done');
+    }, 5000);
+  });
+}
+
 async function allTasks () {
   await task1();
   await task2();
   await task3();
+  await task4();
 }
 
 allTasks();
