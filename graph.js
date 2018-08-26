@@ -93,7 +93,7 @@
 //   }
 // );
 // console.log(res);
-var mysql = require('mysql');
+// var mysql = require('mysql');
 var ug = require('ug');
 var parse = require('csv-parse');
 var stream = require('csv-stream')
@@ -168,30 +168,59 @@ class RecommendationEngine {
 		})
 	}
 
-	load_graph (graph_path) {
+	load_graph (graph_path, callback) {
 		var that = this;
-		console.log("In function")
+		// console.log("In function")
 		this.graph.load(graph_path, function(err){
-			// do nothing
+		// do nothing
 			if (err) {
-				console.log('Error message:' + err);
+				callback(err);
 			} else {
-				console.log(that.graph.nodes('podcast').query().units()[0])
+				callback();
 			}
 		})
+
+		
 	}
 
-	save_graph (graph_path) {
+	save_graph (graph_path, callback) {
 		var that = this;
 		this.graph.save(graph_path, function(err){
 			// do nothing
 			if (err) {
-				console.log('Error message:' + err);
+				callback(err);
 			} else {
-				console.log(that.graph)
+				callback();
 			}
 		})
 	}
+
+	link_podcasts_by_cat (callback) {
+		var that = this;
+		var nodes = this.graph.nodes('podcast').query().units();
+		for (var i in nodes) {
+			for (var j in nodes){
+				if ( i >= j){
+					continue;
+				} else {
+					var inner_node = nodes[i];
+					var outter_node = nodes[j];
+					if (inner_node.properties.category == outter_node.properties.category) {
+						that.graph.createEdge('share_category').link(inner_node, outter_node).setDistance(1);
+					}
+				}
+			}
+		}
+		// console.log(nodes);
+		callback(0);
+	}
+
+	// link_podcasts_by_auth (callback) {
+	// 	var nodes = this.graph.nodes('podcast').query().units();
+	// 	for (var node in nodes) {
+
+	// 	}
+	// }
 }
 
 var receng = new RecommendationEngine('test');
@@ -200,6 +229,17 @@ module.exports = RecommendationEngine;
 // receng.load_podcasts('/Users/don/Documents/Darwin/data/itunes-podcast-details.csv');
 // receng.load_podcasts('/Users/don/Documents/Darwin/data/test.csv')
 // receng.save_graph('/Users/don/Documents/Darwin/graph/graph.ugd');
-// receng.load_graph('/Users/don/Documents/Darwin/graph/graph.ugd');
-// console.log(receng.graph)
+receng.load_graph('/Users/don/Documents/Darwin/graph/graph.ugd', function(err){
+	if (err) {
+		console.log('Error message:' + err);
+	} else {
+		receng.link_podcasts_by_cat( function(err) {
+			if (err){
+				console.log('Error message:' + err);
+			} else {
+				console.log("done");
+			}
+		});
+	}
+})
 
