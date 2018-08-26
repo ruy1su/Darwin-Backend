@@ -124,15 +124,15 @@ class RecommendationEngine {
 		this.graph = new ug.Graph();
 	}
 
-	load_users (users) {
+	load_users (users, callback) {
 		var that = this;
 		for (var i = 0; i < users.length; i++) { 
 		    that.graph.createNode('user', users[i]);
 		}
-		// console.log(users);
+		callback();
 	}
 
-	load_links (links){
+	load_links (links, callback){
 		var that = this;
 		var uid = 0
 		var pid = 0
@@ -145,6 +145,7 @@ class RecommendationEngine {
 			// console.log(pnode)
 			that.graph.createEdge('collection').link(unode, pnode).setDistance(1);
 		}
+		callback();
 	}
 
 	recommendPodcasts(){
