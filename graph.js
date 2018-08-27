@@ -148,9 +148,17 @@ class RecommendationEngine {
 		callback();
 	}
 
+	load_one_link(uid, pid, callback){
+		var unode = that.graph.nodes('user').query().filter({uid__is: uid.toString()}).units()[0];
+			// console.log(unode)
+		var pnode = that.graph.nodes('podcast').query().filter({id__is: pid.toString()}).units()[0];
+			// console.log(pnode)
+		that.graph.createEdge('collection').link(unode, pnode).setDistance(1);
+		callback();
+	}
+
 	recommendPodcasts(){
 		var that = this;
-		console.log(that.graph.edges('collection').query().units());
 		console.log("...............")
 		console.log(that.graph.nodes('user').query().first())
 		console.log((that.graph.closest(
@@ -211,6 +219,7 @@ class RecommendationEngine {
 	link_podcasts_by_cat (callback) {
 		var that = this;
 		var nodes = this.graph.nodes('podcast').query().units();
+		console.log(nodes.length)
 		for (var i in nodes) {
 			for (var j in nodes){
 				if ( i >= j){
@@ -242,17 +251,17 @@ module.exports = RecommendationEngine;
 // receng.load_podcasts('/Users/don/Documents/Darwin/data/itunes-podcast-details.csv');
 // receng.load_podcasts('/Users/don/Documents/Darwin/data/test.csv')
 // receng.save_graph('/Users/don/Documents/Darwin/graph/graph.ugd');
-receng.load_graph('/Users/don/Documents/Darwin/graph/graph.ugd', function(err){
-	if (err) {
-		console.log('Error message:' + err);
-	} else {
-		receng.link_podcasts_by_cat( function(err) {
-			if (err){
-				console.log('Error message:' + err);
-			} else {
-				console.log("done");
-			}
-		});
-	}
-})
+// receng.load_graph('/Users/don/Documents/Darwin/graph/graph.ugd', function(err){
+// 	if (err) {
+// 		console.log('Error message:' + err);
+// 	} else {
+// 		receng.link_podcasts_by_cat( function(err) {
+// 			if (err){
+// 				console.log('Error message:' + err);
+// 			} else {
+// 				console.log("done");
+// 			}
+// 		});
+// 	}
+// })
 

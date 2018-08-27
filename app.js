@@ -2,7 +2,6 @@
 
 // Copyright © 2018 Darwin. All rights reserved.
 
-
 var mysql = require('mysql');
 var express = require('express');
 var escapeJSON = require('escape-json-node');
@@ -58,61 +57,29 @@ connection.query(`Select uid, pid FROM user_collection;`, function(error, rows, 
         }
     });
 // receng.load_links(links)
+receng.load_graph('/home/ec2-user/Darwin-Backend/graph.ugd', function(err){
+    if (err) {
+        console.log('Error message:' + err);
+    } else {
+        receng.load_users(users, function(err) {
+            if (err){
+                console.log('Error message:' + err);
+            } else {
+                console.log("done");
+                receng.load_links(links,function(err) {
+                    if (err){
+                        console.log('Error message:' + err);
+                    } else {
+                        console.log("done");
+                        receng.recommendPodcasts()
+                    }
+                });
+            }
+        })
+    }
+})
 
-/**
- * Task 1
- */
-function task1 () {
-  return new Promise(resolve => {
-    setTimeout(() => {
-      receng.load_graph('/home/ec2-user/Darwin-Backend/graph.ugd');
-      resolve('done');
-    }, 5000);
-  });
-}
 
-/**
- * Task 2
- */
-function task2 () {
-
-  return new Promise(resolve => {
-    setTimeout(() => {
-      receng.load_users(users)
-      resolve('done');
-    }, 5000)
-  });
-}
-
-/**
- * Task 3
- */
-function task3 () {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      receng.load_links(links)
-      resolve('done');
-    }, 5000);
-  });
-}
-
-function task4 () {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      receng.recommendPodcasts()
-      resolve('done');
-    }, 5000);
-  });
-}
-
-async function allTasks () {
-  await task1();
-  await task2();
-  await task3();
-  await task4();
-}
-
-allTasks();
 // POST API ---------------------------------------------------------------------------------------------------------------------------------------
 
 app.post("/create_user", (req, res) => {
@@ -136,8 +103,44 @@ app.post("/create_collection", (req, res) => {
     connection.query(`INSERT INTO user_collection (uid, pid) VALUES ("${uid}", "${pid}")`, function(err, result){
         if(err) {return res.send(err);}
         else{
-            console.log("1 collection inserted");
+            console.log("1 collection inserted into Database");
             res.send("Success");
+            receng.load_one_link(uid, pid,function(err) {
+                if (err){
+                    console.log('Error message:' + err);
+                } else {
+                    console.log("1 collection inserted into Tree");
+                }
+            });
+        }
+    });
+});
+
+app.get("/refresh_recommendation/:uid", function (req, res){
+    uid = req.params.uid;
+    connection.query(`Select category from podcast_list where id = (select pid from user_collection where uid = ${uid});`, function(error, rows, fields){
+        if(error){
+            console.log('Error in the query');
+        }
+        else{
+            console.log('Successfull query', rows);
+            // res.send(rows);
+            var catListForThisUser = []
+            for (i = 0; i < rows.length; i++) { 
+                var cat = rows[0]['category']
+                console.log(cat)
+                if (!(catListForThisUser.includes(cat))){
+                    catListForThisUser.push(cat)
+                }
+            } 
+            console.log(catListForThisUser)
+            var recList = []
+
+            for (i = 0; i < catListForThisUser.length; i++){
+                recList.push(receng.graph.nodes('podcast').query().filter({category__is: catListForThisUser[i]}).units()[Math.floor(Math.random() * 1000) + 1 ])
+            }
+            res.send(recList);
+
         }
     });
 });
@@ -168,7 +171,7 @@ app.get("/login_request/:username/:password", function (req, res){
             console.log('Error in the query');
         }
         else{
-            console.log('Successfull query');
+            console.log('Successfull query', rows[0]["uid"]);
             res.send(rows[0]);
         }
     });
