@@ -71,7 +71,7 @@ receng.load_graph('/home/ec2-user/Darwin-Backend/graph.ugd', function(err){
                         console.log('Error message:' + err);
                     } else {
                         console.log("done");
-                        receng.recommendPodcasts()
+                        // receng.recommendPodcasts()
                     }
                 });
             }
@@ -116,34 +116,6 @@ app.post("/create_collection", (req, res) => {
     });
 });
 
-app.get("/refresh_recommendation/:uid", function (req, res){
-    uid = req.params.uid;
-    connection.query(`Select category from podcast_list where id = (select pid from user_collection where uid = ${uid});`, function(error, rows, fields){
-        if(error){
-            console.log('Error in the query');
-        }
-        else{
-            console.log('Successfull query', rows);
-            // res.send(rows);
-            var catListForThisUser = []
-            for (i = 0; i < rows.length; i++) { 
-                var cat = rows[0]['category']
-                console.log(cat)
-                if (!(catListForThisUser.includes(cat))){
-                    catListForThisUser.push(cat)
-                }
-            } 
-            console.log(catListForThisUser)
-            var recList = []
-
-            for (i = 0; i < catListForThisUser.length; i++){
-                recList.push(receng.graph.nodes('podcast').query().filter({category__is: catListForThisUser[i]}).units()[Math.floor(Math.random() * 1000) + 1 ])
-            }
-            res.send(recList);
-
-        }
-    });
-});
 
 // DELETE API ---------------------------------------------------------------------------------------------------------------------------------------
 app.delete('/delete_usr_collection/:uid/:pid',function(req,res){
@@ -192,6 +164,7 @@ app.get("/login/:email", function (req, res){
     });
 });
 
+// Load User's collection by user ID
 app.get("/load_user_coll/:uid", function (req, res){
     search_key = req.params.uid;
     console.log(search_key)
@@ -230,7 +203,78 @@ app.get("/load_user_coll/:uid", function (req, res){
     });
 });
 
-// GET API ---------------------------------------------------------------------------------------------------------------------------------------
+// Recommendation Algorithm
+app.get("/refresh_recommendation/:uid", function (req, res){
+    uid = req.params.uid;
+    connection.query(`Select category from podcast_list where id = (select pid from user_collection where uid = ${uid});`, function(error, rows, fields){
+        if(error){
+            console.log('Error in the query');
+        }
+        else{
+            console.log('Successfull query', rows);
+            var catListForThisUser = []
+            for (i = 0; i < rows.length; i++) { 
+                var cat = rows[0]['category']
+                if (!(catListForThisUser.includes(cat))){
+                    catListForThisUser.push(cat)
+                }
+            } 
+            console.log(catListForThisUser)
+            var recList = []
+            while (recList.length < 10){
+                for (i = 0; i < catListForThisUser.length; i++){
+                        var len = receng.graph.nodes('podcast').query().filter({category__is: catListForThisUser[i]}).units().length
+                        var x = receng.graph.nodes('podcast').query().filter({category__is: catListForThisUser[i]}).units()[Math.floor(Math.random() * len) + 1 ]
+                        console.log(x["properties"]["id"])
+                        recList.push(x["properties"]["id"])
+                }
+            }
+            console.log(recList)
+            var str = ""
+            for (var i = 0; i < recList.length; i++) {
+                str+=recList[i].toString();
+                if (i < recList.length-1){
+                    str+=','
+                }
+            }
+            connection.query(`SELECT id, api_data FROM podcast_list where id in (${str});`, function(error, rows, fields){
+               if(error){
+                   console.log('Error in the query');
+               }
+               else{
+                    console.log('Successfull query');
+                    var resultJsonList = [];
+                    for (i = 1; i < rows.length; i++) { 
+                        resultJson = new Object()  
+                        var id = rows[i]['id']
+                        var raw = rows[i]['api_data']
+                        raw = raw.split("=>").join(":");
+                        var jsData = JSON.parse(raw)
+                        var parsedData = jsData['results']
+
+                        resultJson['coverArtURL'] = parsedData[0]['artworkUrl600']
+                        resultJson['artist'] = parsedData[0]['artistName']
+                        resultJson['title'] = parsedData[0]['collectionName']
+                        resultJson['pid'] = id
+                        if(!parsedData[0]['feedUrl']){
+                            resultJson['mediaURL'] = parsedDatash[0]['artworkUrl600']
+                        }
+                        else{
+                            resultJson['mediaURL'] = parsedData[0]['feedUrl']
+                        }
+
+
+                        resultJsonList.push(resultJson)
+                    }
+                    
+                    res.send(resultJsonList);
+               }
+            });
+        }
+    });
+});
+
+
 // Home Page Api
 app.get('/api_home/', function (req,res) {
     connection.query("SELECT id, api_data FROM podcast_list where id in (3, 30, 31, 34,12,14,17,18,19,20,25,26,29)", function(error, rows, fields){
