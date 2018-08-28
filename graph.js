@@ -149,11 +149,12 @@ class RecommendationEngine {
 	}
 
 	load_one_link(uid, pid, callback){
+		var that = this
 		var unode = that.graph.nodes('user').query().filter({uid__is: uid.toString()}).units()[0];
 			// console.log(unode)
 		var pnode = that.graph.nodes('podcast').query().filter({id__is: pid.toString()}).units()[0];
 			// console.log(pnode)
-		that.graph.createEdge('collection').link(unode, pnode).setDistance(1);
+		// that.graph.createEdge('collection').link(unode, pnode).setDistance(1);
 		callback();
 	}
 

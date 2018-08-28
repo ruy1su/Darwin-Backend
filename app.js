@@ -206,30 +206,32 @@ app.get("/load_user_coll/:uid", function (req, res){
 // Recommendation Algorithm
 app.get("/refresh_recommendation/:uid", function (req, res){
     uid = req.params.uid;
-    connection.query(`Select category from podcast_list where id = (select pid from user_collection where uid = ${uid});`, function(error, rows, fields){
+    connection.query(`Select category from podcast_list where id in (select pid from user_collection where uid = ${uid});`, function(error, rows, fields){
         if(error){
-            console.log('Error in the query');
+            console.log('Error in the query wttt');
+            console.log()
         }
         else{
             console.log('Successfull query', rows);
             var catListForThisUser = []
             for (i = 0; i < rows.length; i++) { 
-                var cat = rows[0]['category']
+                var cat = rows[i]['category']
                 if (!(catListForThisUser.includes(cat))){
                     catListForThisUser.push(cat)
                 }
             } 
             console.log(catListForThisUser)
             var recList = []
-            while (recList.length < 10){
+            while (recList.length < 5){
                 for (i = 0; i < catListForThisUser.length; i++){
                         var len = receng.graph.nodes('podcast').query().filter({category__is: catListForThisUser[i]}).units().length
                         var x = receng.graph.nodes('podcast').query().filter({category__is: catListForThisUser[i]}).units()[Math.floor(Math.random() * len) + 1 ]
-                        console.log(x["properties"]["id"])
+                        // console.log(x["properties"]["id"])
                         recList.push(x["properties"]["id"])
                 }
             }
             console.log(recList)
+
             var str = ""
             for (var i = 0; i < recList.length; i++) {
                 str+=recList[i].toString();
@@ -237,34 +239,42 @@ app.get("/refresh_recommendation/:uid", function (req, res){
                     str+=','
                 }
             }
-            connection.query(`SELECT id, api_data FROM podcast_list where id in (${str});`, function(error, rows, fields){
+            console.log(str)
+            connection.query(`SELECT id, category, api_data FROM podcast_list where id in (${str});`, function(error, rows, fields){
                if(error){
                    console.log('Error in the query');
                }
                else{
                     console.log('Successfull query');
                     var resultJsonList = [];
-                    for (i = 1; i < rows.length; i++) { 
+                    for (i = 0; i < rows.length; i++) { 
                         resultJson = new Object()  
                         var id = rows[i]['id']
+                        var cat = rows[i]['category']
                         var raw = rows[i]['api_data']
                         raw = raw.split("=>").join(":");
-                        var jsData = JSON.parse(raw)
-                        var parsedData = jsData['results']
+                        // try {
+                            var jsData = JSON.parse(raw)
+                            var parsedData = jsData['results']
 
-                        resultJson['coverArtURL'] = parsedData[0]['artworkUrl600']
-                        resultJson['artist'] = parsedData[0]['artistName']
-                        resultJson['title'] = parsedData[0]['collectionName']
-                        resultJson['pid'] = id
-                        if(!parsedData[0]['feedUrl']){
-                            resultJson['mediaURL'] = parsedDatash[0]['artworkUrl600']
-                        }
-                        else{
-                            resultJson['mediaURL'] = parsedData[0]['feedUrl']
-                        }
+                            resultJson['coverArtURL'] = parsedData[0]['artworkUrl600']
+                            resultJson['artist'] = parsedData[0]['artistName']
+                            resultJson['title'] = parsedData[0]['collectionName']
+                            resultJson['pid'] = id
+                            resultJson['category'] = cat
+                            if(!parsedData[0]['feedUrl']){
+                                resultJson['mediaURL'] = parsedData[0]['artworkUrl600']
+                            }
+                            else{
+                                resultJson['mediaURL'] = parsedData[0]['feedUrl']
+                            }
 
 
-                        resultJsonList.push(resultJson)
+                            resultJsonList.push(resultJson)                          
+                        // } catch (e) {
+                        //     console.log(e);
+                        // }
+                        
                     }
                     
                     res.send(resultJsonList);
@@ -277,7 +287,7 @@ app.get("/refresh_recommendation/:uid", function (req, res){
 
 // Home Page Api
 app.get('/api_home/', function (req,res) {
-    connection.query("SELECT id, api_data FROM podcast_list where id in (3, 30, 31, 34,12,14,17,18,19,20,25,26,29)", function(error, rows, fields){
+    connection.query("SELECT id, category, api_data FROM podcast_list where id in (3, 30, 31, 34,12,14,17,18,19,20,25,26,29)", function(error, rows, fields){
        if(error){
            console.log('Error in the query');
        }
@@ -287,6 +297,7 @@ app.get('/api_home/', function (req,res) {
             for (i = 1; i < rows.length; i++) { 
                 resultJson = new Object()  
                 var id = rows[i]['id']
+                var cat = rows[i]['category']
                 var raw = rows[i]['api_data']
                 raw = raw.split("=>").join(":");
                 var jsData = JSON.parse(raw)
@@ -296,8 +307,90 @@ app.get('/api_home/', function (req,res) {
                 resultJson['artist'] = parsedData[0]['artistName']
                 resultJson['title'] = parsedData[0]['collectionName']
                 resultJson['pid'] = id
+                resultJson['category'] = cat
                 if(!parsedData[0]['feedUrl']){
-                    resultJson['mediaURL'] = parsedDatash[0]['artworkUrl600']
+                    resultJson['mediaURL'] = parsedData[0]['artworkUrl600']
+                }
+                else{
+                    resultJson['mediaURL'] = parsedData[0]['feedUrl']
+                }
+
+
+                resultJsonList.push(resultJson)
+            }
+            
+            res.send(resultJsonList);
+       }
+    });
+});
+
+//Get podcast by ID
+app.get('/api_pod/:id', function (req,res) {
+    id = req.params.id;
+    connection.query(`SELECT id, category, api_data FROM podcast_list where id = ${id}`, function(error, rows, fields){
+       if(error){
+           console.log('Error in the query');
+       }
+       else{
+            console.log('Successfull query');
+            var resultJsonList = [];
+            for (i = 0; i < rows.length; i++) { 
+                resultJson = new Object()  
+                var id = rows[i]['id']
+                var raw = rows[i]['api_data']
+                var cat = rows[i]['category']
+                raw = raw.split("=>").join(":");
+                var jsData = JSON.parse(raw)
+                var parsedData = jsData['results']
+
+                resultJson['coverArtURL'] = parsedData[0]['artworkUrl600']
+                resultJson['artist'] = parsedData[0]['artistName']
+                resultJson['title'] = parsedData[0]['collectionName']
+                resultJson['pid'] = id
+                resultJson['category'] = cat
+                if(!parsedData[0]['feedUrl']){
+                    resultJson['mediaURL'] = parsedData[0]['artworkUrl600']
+                }
+                else{
+                    resultJson['mediaURL'] = parsedData[0]['feedUrl']
+                }
+
+
+                resultJsonList.push(resultJson)
+            }
+            
+            res.send(resultJsonList);
+       }
+    });
+});
+
+app.get('/api_pod_cat/:cat', function (req,res) {
+    cat = req.params.cat;
+    console.log("here")
+    console.log(cat)
+    connection.query(`SELECT id, category, api_data FROM podcast_list where category = "${cat}" limit 10`, function(error, rows, fields){
+       if(error){
+           console.log('Error in the query');
+       }
+       else{
+            console.log('Successfull query');
+            var resultJsonList = [];
+            for (i = 0; i < rows.length; i++) { 
+                resultJson = new Object()  
+                var id = rows[i]['id']
+                var raw = rows[i]['api_data']
+                var cat = rows[i]['category']
+                raw = raw.split("=>").join(":");
+                var jsData = JSON.parse(raw)
+                var parsedData = jsData['results']
+
+                resultJson['coverArtURL'] = parsedData[0]['artworkUrl600']
+                resultJson['artist'] = parsedData[0]['artistName']
+                resultJson['title'] = parsedData[0]['collectionName']
+                resultJson['pid'] = id
+                resultJson['category'] = cat
+                if(!parsedData[0]['feedUrl']){
+                    resultJson['mediaURL'] = parsedData[0]['artworkUrl600']
                 }
                 else{
                     resultJson['mediaURL'] = parsedData[0]['feedUrl']
