@@ -132,7 +132,7 @@ class RecommendationEngine {
 		callback();
 	}
 
-	load_links (links, callback){
+	load_collection_links (links, callback){
 		var that = this;
 		var uid = 0
 		var pid = 0
@@ -144,6 +144,22 @@ class RecommendationEngine {
 			var pnode = that.graph.nodes('podcast').query().filter({id__is: pid.toString()}).units()[0];
 			// console.log(pnode)
 			that.graph.createEdge('collection').link(unode, pnode).setDistance(1);
+		}
+		callback();
+	}
+
+	load_friend_links (links, callback){
+		var that = this;
+		var uid = 0
+		var pid = 0
+		for (var i = 0; i < links.length; i++) {
+			uid = links[i]["uid"]
+			fid = links[i]["fid"]
+			var unode = that.graph.nodes('user').query().filter({uid__is: uid}).units()[0];
+			// console.log(unode)
+			var fnode = that.graph.nodes('user').query().filter({uid__is: fid}).units()[0];
+			// console.log(pnode)
+			that.graph.createEdge('friend').link(unode, pnode).setDistance(1);
 		}
 		callback();
 	}
