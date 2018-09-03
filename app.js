@@ -86,8 +86,10 @@ app.post("/create_user", (req, res) => {
     var fname=req.body.fname;
     var lname=req.body.lname;
     var email=req.body.email;
+    var username = fname+lname;
+    var imageURL = " ";
     console.log(req.body)
-    connection.query(`INSERT INTO user (fname, lname, email) VALUES ("${fname}", "${lname}", "${email}")`, function(err, result){
+    connection.query(`INSERT INTO user (fname, lname, email, username, imageURL) VALUES ("${fname}", "${lname}", "${email}", "${username}", "${imageURL}")`, function(err, result){
         if(err) {return res.send(err);}
         else{
             console.log("1 user inserted");
@@ -116,6 +118,25 @@ app.post("/create_collection", (req, res) => {
     });
 });
 
+app.post("/follow_user", (req, res) => {
+    var uid=req.body.uid;
+    var fid=req.body.fid;
+    console.log(req.body)
+    connection.query(`INSERT INTO user_follower (uid, fid) VALUES ("${uid}", "${fid}")`, function(err, result){
+        if(err) {return res.send(err);}
+        else{
+            console.log("1 follower inserted into Database");
+            res.send("Success");
+            // receng.load_one_link(uid, pid,function(err) {
+            //     if (err){
+            //         console.log('Error message:' + err);
+            //     } else {
+            //         console.log("1 collection inserted into Tree");
+            //     }
+            // });
+        }
+    });
+});
 
 // DELETE API ---------------------------------------------------------------------------------------------------------------------------------------
 app.delete('/delete_usr_collection/:uid/:pid',function(req,res){
@@ -126,6 +147,19 @@ app.delete('/delete_usr_collection/:uid/:pid',function(req,res){
         if(err) {console.log('Error in the query');}
         else{
             console.log("1 collection deleted");
+            res.send("Success");
+        }
+    });
+});
+
+app.delete("/delete_user_followers/:uid/:fid", (req, res) => {
+    var uid = req.params.uid;
+    var fid = (req.params.fid);
+    console.log(req.body)
+    connection.query(`DELETE from user_follower where uid = "${uid}" and fid = ${fid} ;`, function(err, result){
+        if(err) {console.log('Error in the query');}
+        else{
+            console.log("1 follower deleted"+uid+">"+fid);
             res.send("Success");
         }
     });
@@ -164,11 +198,26 @@ app.get("/login/:email", function (req, res){
     });
 });
 
+// Get user's followers
+app.get("/user_followers/:uid", (req, res) => {
+    var uid=req.params.uid;
+    console.log(req.body)
+    connection.query(`SELECT fid from user_follower where uid = "${uid}"`, function(error, rows, fields){
+        if(error){
+            console.log('Error in the query');
+        }
+        else{
+            console.log('Successfull query');
+            res.send(rows);
+        }
+    });
+});
+
 // Load User's collection by user ID
 app.get("/load_user_coll/:uid", function (req, res){
     search_key = req.params.uid;
     console.log(search_key)
-    connection.query(`Select id, api_data FROM podcast_list where id in (select pid from user_collection where uid = "${search_key}");`, function(error, rows, fields){
+    connection.query(`Select id, category, api_data FROM podcast_list where id in (select pid from user_collection where uid = "${search_key}");`, function(error, rows, fields){
         if(error){
             console.log('Error in the query');
         }
@@ -179,6 +228,7 @@ app.get("/load_user_coll/:uid", function (req, res){
                 resultJson = new Object()  
                 var id = rows[i]['id']
                 var raw = rows[i]['api_data']
+                var cat = rows[i]['category']
                 raw = raw.split("=>").join(":");
                 var jsData = JSON.parse(raw)
                 var parsedData = jsData['results']
@@ -187,6 +237,7 @@ app.get("/load_user_coll/:uid", function (req, res){
                 resultJson['artist'] = parsedData[0]['artistName']
                 resultJson['title'] = parsedData[0]['collectionName']
                 resultJson['pid'] = id
+                resultJson['category'] = cat
                 if(!parsedData[0]['feedUrl']){
                     resultJson['mediaURL'] = parsedData[0]['artworkUrl600']
                 }
@@ -405,6 +456,36 @@ app.get('/api_pod_cat/:cat', function (req,res) {
     });
 });
 
+app.get('/api_coll_user_count/:pid', function (req,res) {
+    pid = req.params.pid;
+    console.log("here")
+    connection.query(`SELECT COUNT(uid) as 'count' FROM user_collection where pid = ${pid}`, function(error, rows, fields){
+       if(error){
+           console.log('Error in the query');
+       }
+       else{
+            console.log('Successfull query');
+            console.log(rows)
+            res.send(rows);
+       }
+    });
+});
+
+app.get('/api_coll_user/:pid', function (req,res) {
+    pid = req.params.pid;
+    console.log("here")
+    connection.query(`SELECT fname, lname, uid, username, imageURL from user where uid in (SELECT uid FROM user_collection where pid = ${pid})`, function(error, rows, fields){
+       if(error){
+           console.log('Error in the query');
+       }
+       else{
+            console.log('Successfull query');
+            console.log(rows)
+            res.send(rows);
+       }
+    });
+});
+
 // Home Page Api Raw Data
 app.get('/api_home_raw/', function (req,res) {
     connection.query("SELECT api_data FROM podcast_list limit 10", function(error, rows, fields){
@@ -468,7 +549,7 @@ app.get('/api_pc_epsd/:podcast_name/', function (req,res) {
 app.get('/api_search/:a?/', function (req,res) {
     search_key = req.params.a;
 
-    var sql = `SELECT id, api_data FROM podcast_list where podcast LIKE '%${search_key}%' `
+    var sql = `SELECT id, category, api_data FROM podcast_list where podcast LIKE '%${search_key}%' `
     console.log(sql)
     connection.query(sql, search_key, function(error, rows, fields){
        if(error){
@@ -481,6 +562,7 @@ app.get('/api_search/:a?/', function (req,res) {
                 resultJson = new Object()  // init the new json object for return 
                 var id = rows[i]['id']
                 var raw = rows[i]['api_data']
+                var cat = rows[i]['category']
                 // console.log(raw+"-------------\r\n");
                 raw = raw.split("=>").join(":");
                 raw = raw.replace(/(\r\n\t|\n|\r\t)/gm,"");
@@ -495,6 +577,7 @@ app.get('/api_search/:a?/', function (req,res) {
                 }
                 var parsedData = jsData['results']
                 resultJson['pid'] = id
+                resultJson['category'] = cat
                 resultJson['coverArtURL'] = parsedData[0]['artworkUrl600']
                 resultJson['artist'] = parsedData[0]['artistName']
                 resultJson['title'] = parsedData[0]['collectionName']
