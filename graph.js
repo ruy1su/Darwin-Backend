@@ -160,7 +160,7 @@ class RecommendationEngine {
 			// console.log(unode)
 			var fnode = that.graph.nodes('user').query().filter({uid__is: fid}).units()[0];
 			// console.log(pnode)
-			that.graph.createEdge('friend').link(unode, pnode).setDistance(1);
+			that.graph.createEdge('friend').link(unode, fnode).setDistance(1);
 		}
 	}
 	
