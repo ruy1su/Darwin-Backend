@@ -29,14 +29,12 @@ connection.connect(function(err) {
     console.log('Connected to database.');
 });
 
-// Load User into Graph
-
+// Create Graph For Darwin
 var users = []
 var links = []
+var friends_links = []
 var receng = new RecommendationEngine('darwin');
-// receng.load_graph('/home/ec2-user/Darwin-Backend/graph.ugd');
 
-// console.log("here")
 connection.query(`Select uid, fname, lname FROM user;`, function(error, rows, fields){
         if(error){
             console.log('Error in the query');
@@ -46,7 +44,7 @@ connection.query(`Select uid, fname, lname FROM user;`, function(error, rows, fi
             users = rows
         }
     });
-// receng.load_users(users)
+
 connection.query(`Select uid, pid FROM user_collection;`, function(error, rows, fields){
         if(error){
             console.log('Error in the query');
@@ -56,7 +54,17 @@ connection.query(`Select uid, pid FROM user_collection;`, function(error, rows, 
             links = rows
         }
     });
-// receng.load_links(links)
+
+connection.query(`Select uid, fid FROM user_follower;`, function(error, rows, fields){
+        if(error){
+            console.log('Error in the query');
+        }
+        else{
+            console.log('Successfull query');
+            friends_links = rows
+        }
+    });
+
 receng.load_graph('/home/ec2-user/Darwin-Backend/graph.ugd', function(err){
     if (err) {
         console.log('Error message:' + err);
@@ -66,12 +74,19 @@ receng.load_graph('/home/ec2-user/Darwin-Backend/graph.ugd', function(err){
                 console.log('Error message:' + err);
             } else {
                 console.log("done");
-                receng.load_links(links,function(err) {
+                receng.load_collection_links(links,function(err) {
                     if (err){
                         console.log('Error message:' + err);
                     } else {
                         console.log("done");
-                        // receng.recommendPodcasts()
+                        receng.load_friend_links(friends_links,function(err) {
+                            if (err){
+                                console.log('Error message:' + err);
+                            } else {
+                                console.log("done");
+                                // receng.recommendPodcasts()
+                            }
+                        });
                     }
                 });
             }
@@ -107,7 +122,7 @@ app.post("/create_collection", (req, res) => {
         else{
             console.log("1 collection inserted into Database");
             res.send("Success");
-            receng.load_one_link(uid, pid,function(err) {
+            receng.load_one_link(uid, pid, function(err) {
                 if (err){
                     console.log('Error message:' + err);
                 } else {
@@ -127,13 +142,13 @@ app.post("/follow_user", (req, res) => {
         else{
             console.log("1 follower inserted into Database");
             res.send("Success");
-            // receng.load_one_link(uid, pid,function(err) {
-            //     if (err){
-            //         console.log('Error message:' + err);
-            //     } else {
-            //         console.log("1 collection inserted into Tree");
-            //     }
-            // });
+            receng.load_one_links(uid, fid, function(err) {
+                if (err){
+                    console.log('Error message:' + err);
+                } else {
+                    console.log("1 follower inserted into Tree");
+                }
+            });
         }
     });
 });
@@ -161,6 +176,13 @@ app.delete("/delete_user_followers/:uid/:fid", (req, res) => {
         else{
             console.log("1 follower deleted"+uid+">"+fid);
             res.send("Success");
+            receng.remove_one_links(uid, fid, 'user', 'user', function(err) {
+                if (err){
+                    console.log('Error message:' + err);
+                } else {
+                    console.log("1 follower inserted into Tree");
+                }
+            });
         }
     });
 });
@@ -254,13 +276,18 @@ app.get("/load_user_coll/:uid", function (req, res){
     });
 });
 
-// Recommendation Algorithm
+// // Recommendation Algorithm by Following
+// app.get("/refresh_recommendation_following/:uid", function (req, res){
+//     uid = req.params.uid;
+
+// }
+
+// Recommendation Algorithm by Content
 app.get("/refresh_recommendation/:uid", function (req, res){
     uid = req.params.uid;
     connection.query(`Select category from podcast_list where id in (select pid from user_collection where uid = ${uid});`, function(error, rows, fields){
         if(error){
             console.log('Error in the query wttt');
-            console.log()
         }
         else{
             console.log('Successfull query', rows);
@@ -304,28 +331,23 @@ app.get("/refresh_recommendation/:uid", function (req, res){
                         var cat = rows[i]['category']
                         var raw = rows[i]['api_data']
                         raw = raw.split("=>").join(":");
-                        // try {
-                            var jsData = JSON.parse(raw)
-                            var parsedData = jsData['results']
+                        var jsData = JSON.parse(raw)
+                        var parsedData = jsData['results']
 
-                            resultJson['coverArtURL'] = parsedData[0]['artworkUrl600']
-                            resultJson['artist'] = parsedData[0]['artistName']
-                            resultJson['title'] = parsedData[0]['collectionName']
-                            resultJson['pid'] = id
-                            resultJson['category'] = cat
-                            if(!parsedData[0]['feedUrl']){
-                                resultJson['mediaURL'] = parsedData[0]['artworkUrl600']
-                            }
-                            else{
-                                resultJson['mediaURL'] = parsedData[0]['feedUrl']
-                            }
+                        resultJson['coverArtURL'] = parsedData[0]['artworkUrl600']
+                        resultJson['artist'] = parsedData[0]['artistName']
+                        resultJson['title'] = parsedData[0]['collectionName']
+                        resultJson['pid'] = id
+                        resultJson['category'] = cat
+                        if(!parsedData[0]['feedUrl']){
+                            resultJson['mediaURL'] = parsedData[0]['artworkUrl600']
+                        }
+                        else{
+                            resultJson['mediaURL'] = parsedData[0]['feedUrl']
+                        }
 
 
-                            resultJsonList.push(resultJson)                          
-                        // } catch (e) {
-                        //     console.log(e);
-                        // }
-                        
+                        resultJsonList.push(resultJson)                       
                     }
                     
                     res.send(resultJsonList);
@@ -338,7 +360,7 @@ app.get("/refresh_recommendation/:uid", function (req, res){
 
 // Home Page Api
 app.get('/api_home/', function (req,res) {
-    connection.query("SELECT id, category, api_data FROM podcast_list where id in (3, 30, 31, 34,12,14,17,18,19,20,25,26,29)", function(error, rows, fields){
+    connection.query("SELECT id, category, api_data FROM podcast_list where id in (3,30,31,34,12,14,17,18,19,20,25,26,29)", function(error, rows, fields){
        if(error){
            console.log('Error in the query');
        }
@@ -375,7 +397,7 @@ app.get('/api_home/', function (req,res) {
     });
 });
 
-//Get podcast by ID
+// Get podcast by ID
 app.get('/api_pod/:id', function (req,res) {
     id = req.params.id;
     connection.query(`SELECT id, category, api_data FROM podcast_list where id = ${id}`, function(error, rows, fields){
@@ -415,6 +437,7 @@ app.get('/api_pod/:id', function (req,res) {
     });
 });
 
+// Get Podcasts by Category
 app.get('/api_pod_cat/:cat', function (req,res) {
     cat = req.params.cat;
     console.log("here")
@@ -522,7 +545,6 @@ app.get('/api_episode/:pid/', function (req,res) {
                 rows[i]['eid'] = 0
                 rows[i]['artist'] = " "
                 rows[i]['mediaURL'] = "http://"
-                // http://feeds.soundcloud.com/stream/262465031-a-bomb-audio-episode-1-fight-with-monsters.mp3
             }
             
             res.send(rows);
@@ -590,28 +612,6 @@ app.get('/api_search/:a?/', function (req,res) {
     });
 });
 
-
-// Search Episode with Podcast Id
-app.get('/api_episode_trending/', function (req,res) {
-    search_key = req.params.pid;
-    connection.query(`SELECT podcast_id as pid, podcast, episode as title, release_date, info FROM episode where id = 1600 or id = 1700 or id = 590;`, function(error, rows, fields){
-        if(error){
-            console.log('Error in the query');
-        }
-        else{
-            console.log('Successfull query');
-            var resultJsonList = [];
-            for (i = 0; i < rows.length; i++) { 
-                rows[i]['eid'] = 0
-                rows[i]['artist'] = " "
-                rows[i]['mediaURL'] = "http://is5.mzstatic.com/image/thumb/Music6/v4/ca/82/2f/ca822f13-f1f7-dd8c-957d-a95a7b43501c/source/100x100bb.jpg"
-            }
-            
-            res.send(rows);
-        }
-    });
-});
-
 //home page: TRENDING
 app.get('/api_trending/', function (req,res) {
     connection.query("SELECT podcast_list.api_data, episode.podcast_id as pid, episode.podcast, episode.episode as title, episode.release_date, episode.info, episode.id as eid FROM episode join podcast_list ON episode.podcast_id = 131 and episode.podcast_id = podcast_list.id limit 4;", function(error, rows, fields){
@@ -647,18 +647,6 @@ app.get('/api_trending/', function (req,res) {
             }
             res.send(rows);
             // showRes(res, rows);
-       }
-    });
-});
-
-app.get('/api_up_next/', function (req,res) {
-    connection.query("SELECT api_data FROM podcast_list where id = 123761 or id = 115049 or id = 113522;", function(error, rows, fields){
-       if(error){
-           console.log('Error in the query');
-       }
-       else{
-            console.log('Successfull query');
-            showRes(res, rows);
        }
     });
 });

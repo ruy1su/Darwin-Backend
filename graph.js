@@ -152,24 +152,25 @@ class RecommendationEngine {
 	load_friend_links (links, callback){
 		var that = this;
 		var uid = 0
-		var pid = 0
+		var fid = 0
 		for (var i = 0; i < links.length; i++) {
 			uid = links[i]["uid"]
 			fid = links[i]["fid"]
 			var unode = that.graph.nodes('user').query().filter({uid__is: uid}).units()[0];
-			// console.log(unode)
+			console.log(unode)
 			var fnode = that.graph.nodes('user').query().filter({uid__is: fid}).units()[0];
-			// console.log(pnode)
-			that.graph.createEdge('friend').link(unode, pnode).setDistance(1);
+			console.log(fnode)
+			that.graph.createEdge('friend').link(unode, fnode).setDistance(1);
 		}
+		callback();
 	}
 	
 	load_one_link(uid, pid, callback){
 		var that = this
-		var unode = that.graph.nodes('user').query().filter({uid__is: uid.toString()}).units()[0];
-			// console.log(unode)
-		var pnode = that.graph.nodes('podcast').query().filter({id__is: pid.toString()}).units()[0];
-			// console.log(pnode)
+		var unode = that.graph.nodes(first).query().filter({uid__is: uid}).units()[0];
+		console.log(unode)
+		var pnode = that.graph.nodes(second).query().filter({id__is: pid.toString()}).units()[0];
+		console.log(pnode)
 		// that.graph.createEdge('collection').link(unode, pnode).setDistance(1);
 
 		callback();
@@ -182,7 +183,9 @@ class RecommendationEngine {
 		console.log((that.graph.closest(
 		  that.graph.nodes('user').query().first(), // grab Sharing Economy node
 		  	{
-			  count: 0
+			  compare: function(node) {
+			    return node.entity === 'user';
+			  }
 			}
 		)).toString())
 	}
