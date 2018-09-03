@@ -173,7 +173,7 @@ class RecommendationEngine {
 		callback();
 	}
 
-	load_one_friend_link(uid, pid, callback){
+	load_one_friend_link(uid, fid, callback){
 		var that = this
 		var unode = that.graph.nodes('user').query().filter({uid__is: uid.toString()}).units()[0];
 			// console.log(unode)
