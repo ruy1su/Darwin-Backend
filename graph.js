@@ -1,122 +1,13 @@
-// // // import DataFrame from '../node_modules/dataframe-js';
-// // // import DataFrame, { Row } from 'dataframe-js';
+// Created By Don Lee, Zixia Weng on Auguest 21. 2018 
 
-// const http = require('http');
+// Copyright © 2018 Darwin. All rights reserved.
 
-// const hostname = '127.0.0.1';
-// const port = 3000;
-
-// const server = http.createServer((req, res) => {
-//   res.statusCode = 200;
-//   res.setHeader('Content-Type', 'text/plain');
-//   res.end('Hello World!\n');
-// });
-
-// server.listen(port, hostname, () => {
-//   console.log(`Server running at http://${hostname}:${port}/`);
-// });
-
-
-// let ug = require('ug');
-// let graph = new ug.Graph();
-
-// let users = {
-// 	user_1: graph.createNode('user', {name: "Don Lee"}),
-// 	user_2: graph.createNode('user', {name: "Zixia Wang"}),
-// 	user_3: graph.createNode('user', {name: "Himank Sharma"}),
-// 	user_4: graph.createNode('user', {name: "Xiao"})
-// };
-
-// let podcasts = { 
-// 	podcast_1: graph.createNode('podcast', {name: 'A&E Radio!!!'}),
-// 	podcast_2: graph.createNode('podcast', {name: "A&G's Picture This!"}),
-// 	podcast_3: graph.createNode('podcast', {name: "A-Birding on a Bronco by MERRIAM, Florence A."})
-// };
-
-// graph.createEdge('likes').link(users.user_1, podcasts.podcast_1).setDistance(1);
-// graph.createEdge('likes').link(users.user_2, podcasts.podcast_1).setDistance(1);
-// graph.createEdge('likes').link(users.user_2, podcasts.podcast_2).setDistance(1);
-// graph.createEdge('likes').link(users.user_2, podcasts.podcast_3).setDistance(1);
-// graph.createEdge('likes').link(users.user_3, podcasts.podcast_3).setDistance(1);
-// graph.createEdge('likes').link(users.user_4, podcasts.podcast_3).setDistance(1);
-
-// graph.createEdge('listened').link(users.user_4, podcasts.podcast_3).setDistance(2);
-
-
-// let results = graph.closest(
-// 	graph.nodes('user').query().first(),
-// 	{
-// 		compare: function(node) {
-// 			return node.entity == 'podcast';
-// 		},
-// 		count: 2
-// 	}
-// );
-
-// results.forEach( function(result){
-// 	console.log(result.end().properties)
-// });
-
-
-// let ug = require('ug');
-// let graph = new ug.Graph();
-
-// let classification = graph.createNode('classification', {name: 'Sharing Economy'});
-
-// let corps = {
-//   uber: graph.createNode('corporation', {name: 'Uber'}),
-//   storefront: graph.createNode('corporation', {name: 'Storefront'}),
-//   airbnb: graph.createNode('corporation', {name: 'AirBnB'})
-// };
-
-// let industries = {
-//   vc: graph.createNode('industry', {name: 'Venture Capital'}),
-//   hospitality: graph.createNode('industry', {name: 'Hospitality'}),
-//   taxi: graph.createNode('industry', {name: 'Taxi'})
-// };
-
-// graph.createEdge('business_model').link(corps.uber, classification);
-// graph.createEdge('business_model').link(corps.airbnb, classification);
-// graph.createEdge('business_model').link(corps.storefront, classification);
-// graph.createEdge('emotion', {type: 'happy'}).link(industries.vc, classification);
-// graph.createEdge('emotion', {type: 'sad'}).link(industries.hospitality, classification);
-// graph.createEdge('emotion', {type: 'sad'}).link(industries.taxi, classification);
-
-// res = graph.closest(
-//   graph.nodes('classification').query().first(), // grab Sharing Economy node
-//   {
-//     compare: function(node) {
-//       // forget industries and uber!
-//       return node.entity !== 'industry' && node.get('name') !== 'Uber';
-//     },
-//     direction: -1 // only track nodes that feed in to this one
-//   }
-// );
-// console.log(res);
-// var mysql = require('mysql');
 var ug = require('ug');
 var parse = require('csv-parse');
 var stream = require('csv-stream')
 var request = require('request')
 var fs = require('fs')
-var DataFrame = require('dataframe-js').DataFrame
-
-// var connection = mysql.createConnection({
-//     host     : 'aam2629vgw55ee.czd1gxziytnq.us-east-2.rds.amazonaws.com',
-//     user     : 'eric',
-//     password : 'Weng950702',
-//     port     : '3306',
-//     database : 'darwin',
-//     multipleStatements: true
-//     });
-// connection.connect(function(err) {
-//     if (err) {
-//        console.error('Database connection failed: ' + err.stack);
-//        return;
-//     }
-//     console.log('Connected to database.');
-// });
-
+// var DataFrame = require('dataframe-js').DataFrame
 
 class RecommendationEngine {
 	constructor (name) {
@@ -216,7 +107,6 @@ class RecommendationEngine {
 			that.graph.save('/Users/don/Documents/Darwin/graph/graph.ugd', function(){
 				console.log('done');
 			})
-			// do nothing
 		})
 	}
 
@@ -268,6 +158,11 @@ class RecommendationEngine {
 		callback(0);
 	}
 
+	find_all(callback){
+		var that = this;
+		var nodes = this.graph.nodes('podcast').query().filter({feedUrl__is: ''}).units();
+		console.log(nodes[0])
+	}
 	// link_podcasts_by_auth (callback) {
 	// 	var nodes = this.graph.nodes('podcast').query().units();
 	// 	for (var node in nodes) {
@@ -282,17 +177,25 @@ module.exports = RecommendationEngine;
 // receng.load_podcasts('/Users/don/Documents/Darwin/data/itunes-podcast-details.csv');
 // receng.load_podcasts('/Users/don/Documents/Darwin/data/test.csv')
 // receng.save_graph('/Users/don/Documents/Darwin/graph/graph.ugd');
-// receng.load_graph('/Users/don/Documents/Darwin/graph/graph.ugd', function(err){
-// 	if (err) {
-// 		console.log('Error message:' + err);
-// 	} else {
-// 		receng.link_podcasts_by_cat( function(err) {
-// 			if (err){
-// 				console.log('Error message:' + err);
-// 			} else {
-// 				console.log("done");
-// 			}
-// 		});
-// 	}
-// })
+receng.load_graph('/Users/wengzixia/Desktop/Darwin-Backend/graph_withall.ugd', function(err){
+	if (err) {
+		console.log('Error message:' + err);
+	} else {
+		receng.link_podcasts_by_cat( function(err) {
+			if (err){
+				console.log('Error message:' + err);
+			} else {
+				console.log("done");
+				receng.find_all( function(err) {
+					if (err){
+						console.log('Error message:' + err);
+					} else {
+						console.log("done");
+						receng.find_all()
+					}
+				});
+			}
+		});
+	}
+});
 

@@ -10,9 +10,14 @@
   "mysql": "latest",
   "dependencies": {
     "babel-cli": "^6.26.0",
+    "csv-parse": "^3.0.0",
+    "csv-stream": "^0.2.0",
+    "escape-json-node": "^2.0.0",
     "express": "^4.16.3",
     "forever": "^0.15.3",
-    "mysql": "^2.15.0"
+    "mysql": "^2.15.0",
+    "request": "^2.88.0",
+    "ug": "0.0.8"
   },
   "scripts": {
     "start": "node app.js"

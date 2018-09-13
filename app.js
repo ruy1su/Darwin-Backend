@@ -84,7 +84,7 @@ receng.load_graph('/home/ec2-user/Darwin-Backend/graph.ugd', function(err){
                                 console.log('Error message:' + err);
                             } else {
                                 console.log("done");
-                                receng.recommendPodcasts()
+                                // receng.recommendPodcasts()
                             }
                         });
                     }
@@ -292,71 +292,71 @@ app.get("/refresh_recommendation_following/:uid", function (req, res){
        // only track nodes that feed in to this one
       }
     );
-    var resultJsonList = [];
-    for (var i = 0; i < result.length; i++) {
-        resultJson = new Object()  
-        resultJson['coverArtURL'] = result[i].end()["properties"]["artworkUrl600"]
-        resultJson['artist'] = result[i].end()["properties"]["artistName"]
-        resultJson['title'] = result[i].end()["properties"]["collectionName"]
-        resultJson['pid'] = Number(result[i].end()["properties"]["id"])
-        resultJson['category'] = result[i].end()["properties"]["category"]
-        resultJson['url'] = result[i].end()["properties"]["url"]
-        resultJson['mediaURL'] = result[i].end()["properties"]["feedUrl"]
-        resultJsonList.push(resultJson)                       
+    // var resultJsonList = [];
+    // for (var i = 0; i < result.length; i++) {
+    //     resultJson = new Object()  
+    //     resultJson['coverArtURL'] = result[i].end()["properties"]["artworkUrl600"]
+    //     resultJson['artist'] = result[i].end()["properties"]["artistName"]
+    //     resultJson['title'] = result[i].end()["properties"]["collectionName"]
+    //     resultJson['pid'] = Number(result[i].end()["properties"]["id"])
+    //     resultJson['category'] = result[i].end()["properties"]["category"]
+    //     resultJson['url'] = result[i].end()["properties"]["url"]
+    //     resultJson['mediaURL'] = result[i].end()["properties"]["feedUrl"]
+    //     resultJsonList.push(resultJson)                       
+    // }
+    // console.log("hellohere in recommendation")
+    // res.send(resultJsonList);
+
+    var recList = []
+    for (i = 0; i < result.length; i++) { 
+        console.log(result[i].end()["properties"]["id"])
+        recList.push(result[i].end()["properties"]["id"])
     }
-    console.log("hellohere in recommendation")
-    res.send(resultJsonList);
+    console.log(recList)
 
-    // var recList = []
-    // for (i = 0; i < result.length; i++) { 
-    //     console.log(result[i].end()["properties"]["id"])
-    //     recList.push(result[i].end()["properties"]["id"])
-    // }
-    // console.log(recList)
+    var str = ""
+    for (var i = 0; i < recList.length; i++) {
+        str+=recList[i].toString();
+        if (i < recList.length-1){
+            str+=','
+        }
+    }
+    console.log(str)
+    connection.query(`SELECT id, category, url, api_data FROM podcast_list where id in (${str});`, function(error, rows, fields){
+     if(error){
+         console.log('Error in the query');
+     }
+     else{
+        console.log('Successfull query');
+        var resultJsonList = [];
+        for (i = 0; i < rows.length; i++) { 
+            resultJson = new Object()  
+            var id = rows[i]['id']
+            var cat = rows[i]['category']
+            var url = rows[i]['url']
+            var raw = rows[i]['api_data']
+            raw = raw.split("=>").join(":");
+            var jsData = JSON.parse(raw)
+            var parsedData = jsData['results']
 
-    // var str = ""
-    // for (var i = 0; i < recList.length; i++) {
-    //     str+=recList[i].toString();
-    //     if (i < recList.length-1){
-    //         str+=','
-    //     }
-    // }
-    // console.log(str)
-    // connection.query(`SELECT id, category, url, api_data FROM podcast_list where id in (${str});`, function(error, rows, fields){
-    //  if(error){
-    //      console.log('Error in the query');
-    //  }
-    //  else{
-    //     console.log('Successfull query');
-    //     var resultJsonList = [];
-    //     for (i = 0; i < rows.length; i++) { 
-    //         resultJson = new Object()  
-    //         var id = rows[i]['id']
-    //         var cat = rows[i]['category']
-    //         var url = rows[i]['url']
-    //         var raw = rows[i]['api_data']
-    //         raw = raw.split("=>").join(":");
-    //         var jsData = JSON.parse(raw)
-    //         var parsedData = jsData['results']
+            resultJson['coverArtURL'] = parsedData[0]['artworkUrl600']
+            resultJson['artist'] = parsedData[0]['artistName']
+            resultJson['title'] = parsedData[0]['collectionName']
+            resultJson['pid'] = id
+            resultJson['category'] = cat
+            resultJson['url'] = url
+            if(!parsedData[0]['feedUrl']){
+                resultJson['mediaURL'] = parsedData[0]['artworkUrl600']
+            }
+            else{
+                resultJson['mediaURL'] = parsedData[0]['feedUrl']
+            }
+            resultJsonList.push(resultJson)                       
+        }
 
-    //         resultJson['coverArtURL'] = parsedData[0]['artworkUrl600']
-    //         resultJson['artist'] = parsedData[0]['artistName']
-    //         resultJson['title'] = parsedData[0]['collectionName']
-    //         resultJson['pid'] = id
-    //         resultJson['category'] = cat
-    //         resultJson['url'] = url
-    //         if(!parsedData[0]['feedUrl']){
-    //             resultJson['mediaURL'] = parsedData[0]['artworkUrl600']
-    //         }
-    //         else{
-    //             resultJson['mediaURL'] = parsedData[0]['feedUrl']
-    //         }
-    //         resultJsonList.push(resultJson)                       
-    //     }
-
-    //     res.send(resultJsonList);
-    //  }
-    // });
+        res.send(resultJsonList);
+     }
+    });
 });
 
 // Recommendation Algorithm by Content
@@ -377,72 +377,72 @@ app.get("/refresh_recommendation/:uid", function (req, res){
             } 
             console.log(catListForThisUser)
             var resultJsonList = [];
-            // var recList = []
-            while (resultJsonList.length < 5){
+            var recList = []
+            while (recList.length < 5){
                 for (i = 0; i < catListForThisUser.length; i++){
                         var len = receng.graph.nodes('podcast').query().filter({category__is: catListForThisUser[i]}).units().length
                         var x = receng.graph.nodes('podcast').query().filter({category__is: catListForThisUser[i]}).units()[Math.floor(Math.random() * len) + 1 ]
                         console.log(x["properties"]["id"])
-                        resultJson = new Object() 
-                        resultJson['coverArtURL'] = x["properties"]["artworkUrl600"]
-                        resultJson['artist'] = x["properties"]["artistName"]
-                        resultJson['title'] = x["properties"]["collectionName"]
-                        resultJson['pid'] = Number(x["properties"]["id"])
-                        resultJson['category'] = x["properties"]["category"]
-                        resultJson['url'] = x["properties"]["url"]
-                        resultJson['mediaURL'] = x["properties"]["feedUrl"]
-                        resultJsonList.push(resultJson) 
+                        // resultJson = new Object() 
+                        // resultJson['coverArtURL'] = x["properties"]["artworkUrl600"]
+                        // resultJson['artist'] = x["properties"]["artistName"]
+                        // resultJson['title'] = x["properties"]["collectionName"]
+                        // resultJson['pid'] = Number(x["properties"]["id"])
+                        // resultJson['category'] = x["properties"]["category"]
+                        // resultJson['url'] = x["properties"]["url"]
+                        // resultJson['mediaURL'] = x["properties"]["feedUrl"]
+                        // resultJsonList.push(resultJson) 
                         // console.log(x)
-                        // recList.push(x["properties"]["id"])
+                        recList.push(x["properties"]["id"])
                 }
             }
             // console.log(resultJsonList)
-            res.send(resultJsonList);
-            // var str = ""
-            // for (var i = 0; i < recList.length; i++) {
-            //     str+=recList[i].toString();
-            //     if (i < recList.length-1){
-            //         str+=','
-            //     }
-            // }
-            // console.log(str)
-            // connection.query(`SELECT id, category, url, api_data FROM podcast_list where id in (${str});`, function(error, rows, fields){
-            //    if(error){
-            //        console.log('Error in the query');
-            //    }
-            //    else{
-            //         console.log('Successfull query');
-            //         var resultJsonList = [];
-            //         for (i = 0; i < rows.length; i++) { 
-            //             resultJson = new Object()  
-            //             var id = rows[i]['id']
-            //             var cat = rows[i]['category']
-            //             var raw = rows[i]['api_data']
-            //             var url = rows[i]['url']
-            //             raw = raw.split("=>").join(":");
-            //             var jsData = JSON.parse(raw)
-            //             var parsedData = jsData['results']
+            // res.send(resultJsonList);
+            var str = ""
+            for (var i = 0; i < recList.length; i++) {
+                str+=recList[i].toString();
+                if (i < recList.length-1){
+                    str+=','
+                }
+            }
+            console.log(str)
+            connection.query(`SELECT id, category, url, api_data FROM podcast_list where id in (${str});`, function(error, rows, fields){
+               if(error){
+                   console.log('Error in the query');
+               }
+               else{
+                    console.log('Successfull query');
+                    var resultJsonList = [];
+                    for (i = 0; i < rows.length; i++) { 
+                        resultJson = new Object()  
+                        var id = rows[i]['id']
+                        var cat = rows[i]['category']
+                        var raw = rows[i]['api_data']
+                        var url = rows[i]['url']
+                        raw = raw.split("=>").join(":");
+                        var jsData = JSON.parse(raw)
+                        var parsedData = jsData['results']
 
-            //             resultJson['coverArtURL'] = parsedData[0]['artworkUrl600']
-            //             resultJson['artist'] = parsedData[0]['artistName']
-            //             resultJson['title'] = parsedData[0]['collectionName']
-            //             resultJson['pid'] = id
-            //             resultJson['category'] = cat
-            //             resultJson['url'] = url
-            //             if(!parsedData[0]['feedUrl']){
-            //                 resultJson['mediaURL'] = parsedData[0]['artworkUrl600']
-            //             }
-            //             else{
-            //                 resultJson['mediaURL'] = parsedData[0]['feedUrl']
-            //             }
+                        resultJson['coverArtURL'] = parsedData[0]['artworkUrl600']
+                        resultJson['artist'] = parsedData[0]['artistName']
+                        resultJson['title'] = parsedData[0]['collectionName']
+                        resultJson['pid'] = id
+                        resultJson['category'] = cat
+                        resultJson['url'] = url
+                        if(!parsedData[0]['feedUrl']){
+                            resultJson['mediaURL'] = parsedData[0]['artworkUrl600']
+                        }
+                        else{
+                            resultJson['mediaURL'] = parsedData[0]['feedUrl']
+                        }
 
 
-            //             resultJsonList.push(resultJson)                       
-            //         }
+                        resultJsonList.push(resultJson)                       
+                    }
                     
-            //         res.send(resultJsonList);
-            //    }
-            // });
+                    res.send(resultJsonList);
+               }
+            });
         }
     });
 });
@@ -605,24 +605,32 @@ app.get('/api_coll_user/:pid', function (req,res) {
     });
 });
 
-// Home Page Api Raw Data
-app.get('/api_home_raw/', function (req,res) {
-    connection.query("SELECT api_data FROM podcast_list limit 10", function(error, rows, fields){
+app.get('/api_coll_user/:pid', function (req,res) {
+    pid = req.params.pid;
+    console.log("here")
+    connection.query(`SELECT fname, lname, uid, username, imageURL from user where uid in (SELECT uid FROM user_collection where pid = ${pid})`, function(error, rows, fields){
        if(error){
            console.log('Error in the query');
        }
        else{
             console.log('Successfull query');
-            var resultJsonList = [];
-            for (i = 1; i < rows.length; i++) { 
-                var raw = rows[i]['api_data']
-                raw = raw.split("=>").join(":");
-                var jsData = JSON.parse(raw)
-                var parsedData = jsData['results']
-                resultJsonList.push(parsedData)
-            }
-            
-            res.send(resultJsonList);
+            console.log(rows)
+            res.send(rows);
+       }
+    });
+});
+
+// Home Page Api Raw Data
+app.get('/load_user_following/:uid', function (req,res) {
+    uid = req.params.uid;
+    connection.query(`SELECT fname, lname, uid, username, imageURL from user where uid in (SELECT uid FROM user_follower where fid = ${uid})`, function(error, rows, fields){
+       if(error){
+           console.log('Error in the query');
+       }
+       else{
+            console.log('Successfull query');
+            console.log(rows)
+            res.send(rows);
        }
     });
 });
@@ -756,7 +764,7 @@ app.use(function(req, res, next) {
 });
 
 // Listen to port other than 80
-app.listen(5000, () => console.log('Example app listening on port 3000!'));
+app.listen(5000, () => console.log('Example app listening on port 5000!'));
 
 // End Connection
 app.on('close', function() {
