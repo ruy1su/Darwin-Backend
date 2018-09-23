@@ -73,7 +73,13 @@ class RecommendationEngine {
 			// console.log(unode)
 		var fnode = that.graph.nodes('user').query().filter({uid__is: Number(fid)}).units()[0];
 			// console.log(pnode)
-		that.graph.createEdge('collection').link(unode, fnode).setDistance(1);
+		that.graph.createEdge('follow', {uid: Number(uid), fid: Number(fid)}).link(unode, fnode).setDistance(1);
+		callback();
+	}
+
+	remove_one_friend_link(uid, fid, callback){
+		var that = this
+		that.graph.edges('follow').query().filter({uid__is: Number(uid), fid__is: Number(fid)}).units()[0].unlink();
 		callback();
 	}
 
@@ -177,25 +183,32 @@ module.exports = RecommendationEngine;
 // receng.load_podcasts('/Users/don/Documents/Darwin/data/itunes-podcast-details.csv');
 // receng.load_podcasts('/Users/don/Documents/Darwin/data/test.csv')
 // receng.save_graph('/Users/don/Documents/Darwin/graph/graph.ugd');
-receng.load_graph('/Users/wengzixia/Desktop/Darwin-Backend/graph_withall.ugd', function(err){
+receng.load_graph('/Users/wengzixia/Desktop/Darwin-Backend/graph_1.ugd', function(err){
 	if (err) {
 		console.log('Error message:' + err);
 	} else {
-		receng.link_podcasts_by_cat( function(err) {
-			if (err){
-				console.log('Error message:' + err);
-			} else {
-				console.log("done");
-				receng.find_all( function(err) {
-					if (err){
-						console.log('Error message:' + err);
-					} else {
-						console.log("done");
-						receng.find_all()
-					}
-				});
+		var nodes = receng.graph.nodes('podcast').query().units();
+		console.log(nodes[0].properties)
+		var total = 0;
+		var missing = 0;
+		nodes.forEach(function(node){
+			total = total + 1;
+			var fs = require('fs');
+			if (!node.properties.feedUrl){
+				missing = missing +1;
+				fs.appendFileSync("/Users/wengzixia/Desktop/Darwin-Backend/missing.txt", node.properties.collectionName + '\n');
 			}
+			
 		});
+		console.log(missing)
+		console.log(total)
+		// receng.link_podcasts_by_cat( function(err) {
+		// 	if (err){
+		// 		console.log('Error message:' + err);
+		// 	} else {
+		// 		console.log("done");
+		// 	}
+		// });
 	}
 });
 

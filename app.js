@@ -176,13 +176,13 @@ app.delete("/delete_user_followers/:uid/:fid", (req, res) => {
         else{
             console.log("1 follower deleted"+uid+">"+fid);
             res.send("Success");
-            // receng.remove_one_friend_link(uid, fid, function(err) {
-            //     if (err){
-            //         console.log('Error message:' + err);
-            //     } else {
-            //         console.log("1 follower deleted from Tree");
-            //     }
-            // });
+            receng.remove_one_friend_link(uid, fid, function(err) {
+                if (err){
+                    console.log('Error message:' + err);
+                } else {
+                    console.log("1 follower deleted from Tree");
+                }
+            });
         }
     });
 });
