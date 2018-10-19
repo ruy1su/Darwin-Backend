@@ -8,6 +8,7 @@ var escapeJSON = require('escape-json-node');
 var bodyParser = require('body-parser')
 var app = express();
 const RecommendationEngine = require('./graph.js');
+var port = 80;
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
@@ -764,7 +765,7 @@ app.use(function(req, res, next) {
 });
 
 // Listen to port other than 80
-app.listen(5000, () => console.log('Example app listening on port 5000!'));
+app.listen(port, () => console.log('Example app listening on port 5000!'));
 
 // End Connection
 app.on('close', function() {
